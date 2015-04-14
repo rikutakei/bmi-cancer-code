@@ -1,0 +1,98 @@
+Task 1 - data retrieval and data processing
+
+===============================================================================
+
+First task for my MSc project.
+
+I need to get the patient data from the TCGA website using wget, for all of the
+cancer types.
+
+After that, will need to process the data into something useful.
+
+===============================================================================
+
+31 March 2015
+
+-------------------------------------------------------------------------------
+
+As mentioned above, I need to download data from the TCGA website using 
+wget.
+
+First, I need to get the names of the cancer types, since wget doesn't
+allow wildcard characters for HTML URLs.
+
+    Download index.html file:
+        wget https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/
+
+    Strip the html tags:
+        sed -e 's/<[a-zA-Z\/][^>]*>//g' index.html > index2.html
+
+    Use Vim to delete all the unwanted characters and spaces, so you're 
+    just left with the cancer names.
+
+Once I get the cancer names, then I can loop over the names to download
+the required patient data.
+
+The URL will be in the form of:
+
+https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/**cancer**/bcr/biotab/clin/nationwidechildrens.org_clinical_patient_**cancer**.txt
+
+where **cancer** is where the cancer name gets inserted.
+
+wget allows file input, so use for loop to read from the cancer names file,
+make the appropriate URL, then append it to a separate file.
+
+    Check out the make_url code
+
+Use this file (cancer_urls.txt) as the input file for wget.
+
+    Make patient_data directory and run the wget:
+
+        wget -P patient_data/ -i cancer_urls.txt
+
+-P flag lets you specify the target directory, -i flag lets you specify
+the input file.
+
+The files downloaded have long names, so rename all of them to just the
+cancer name.
+    - see next part
+
+-------------------------------------------------------------------------------
+
+1 April 2015
+
+-------------------------------------------------------------------------------
+
+Out of 38 cancer subtypes that I thought I have downloaded, 5 subtypes didn't 
+have the clinical patient data. These were: cntl, fppp, lcml, lnnh, misc.
+
+Renamed everything to **cancer**_patient_data.txt using a simple for loop
+on command line.
+    Create another index file from index2.html, but remove the 5 subtypes.
+    Use local bash variables to store the names and alter the names of 
+        the files.
+        
+Make a file with all the filenames in it.
+
+Now it's ready to load into R.
+
+-------------------------------------------------------------------------------
+
+9 April 2015
+
+-------------------------------------------------------------------------------
+
+Data has been loaded into R (see task1.R for details)
+
+Out of 33 cancer subtypes, there were only 14 subtypes that had both height
+and weight data.
+
+From these data, I've identified the patients that have both height and weight 
+data. 
+
+Note from Mik: 
+    - wants a table of subtypes and the number of patients with H/W data
+        > Probably give him the list of the data with all the 
+            H/W patient information.
+
+Exported the list as 'BMI_data.txt'. (see code for details)
