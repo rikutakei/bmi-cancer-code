@@ -1,0 +1,9 @@
+#!/bin/bash
+# make URL from the index2.html file
+
+file='index2.html'
+
+for line in `cat $file`
+do
+    echo https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/$line/bcr/biotab/clin/nationwidechildrens.org_clinical_patient_$line.txt >> cancer_urls.txt
+done
