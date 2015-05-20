@@ -69,9 +69,8 @@ have the clinical patient data. These were: cntl, fppp, lcml, lnnh, misc.
 Renamed everything to **cancer**_patient_data.txt using a simple for loop
 on command line.
     Create another index file from index2.html, but remove the 5 subtypes.
-    Use local bash variables to store the names and alter the names of 
-        the files.
-        
+    See rename file for the loop
+
 Make a file with all the filenames in it.
 
 Now it's ready to load into R.
