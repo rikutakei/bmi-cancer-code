@@ -5,7 +5,7 @@
 ######################################################################
 
 ## set working directory, etc:
-setwd('~/Documents/masters/data/task01/patient_data/')
+setwd('~/Documents/masters/data/task01/patient_clin_data/')
 file = readLines('names.txt')
 
 ## read in the patient data from the downloaded files:
