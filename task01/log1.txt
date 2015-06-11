@@ -87,7 +87,7 @@ Out of 33 cancer subtypes, there were only 14 subtypes that had both height
 and weight data.
 
 From these data, I've identified the patients that have both height and weight 
-data. 
+data. (breast cancer did not have mass/weight data)
 
 Note from Mik: 
     - wants a table of subtypes and the number of patients with H/W data

@@ -1,0 +1,36 @@
+Task 2 - looking at UCEC RNA-seq data
+
+===============================================================================
+
+Look at the RNA-seq data of UCEC (endometrial cancer) and perform singular 
+value decomposition (SVD) to identify obesity related metagene.
+
+Compare/validate these genes with the Creighton et al. obesity metagene (799
+genes).
+    - should show if obesity metagene can be used across cancer types
+
+Goal/To-do:
+    - reorganise RNA-seq data into usable format
+    - validate Creighton et al. metagene by either:
+        1) extracting the genes in Creighton et al. genes from the 
+            UCEC data, do SVD, and compare the metagenes, OR
+        2) make obesity metagene from the UCEC clinical data and RNA-seq
+            data, and then compare this metagene with the Creighton et al.
+            metagene (see how well the genes match up)
+
+===============================================================================
+
+11 June 2015
+
+-------------------------------------------------------------------------------
+
+Have downloaded UCEC microarray and RNA-seq data from ICGC database (check 
+the ICGC website).
+
+Load the RNA-seq data into R.
+    - data has a raw read count variable which I can use for SVD
+
+Need to reorganise the data into genes-by-samples matrix
+    - use dplyr (look at the R code)
+
+

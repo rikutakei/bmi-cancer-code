@@ -17,7 +17,7 @@ for (i in 1:length(file)){
 
 ## make a list of 33 and put all the patient data in this list:
 dat_list = vector("list",33) ## make an empty list with 33 items
-txt = gsub("*.txt","",file)
+txt = gsub("*_clinical_patient.txt","",file)
 for (i in 1:length(txt)) {
     dat_list[[i]] = get(txt[i])
 }
@@ -67,5 +67,6 @@ for (i in 1:length(subt_ind)){
     ind = bmi_pat_ind[[i]]
     bmi_pat_list[[i]] = dat_list[[subt_ind[i]]][ind,] ## copy the data of patients with height and weight
 }
+names(bmi_pat_list) = txt[subt_ind]
 
 ## dput(x = bmi_pat_list, file = 'BMI_data.txt') ## to send data to Mik
