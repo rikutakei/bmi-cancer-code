@@ -21,9 +21,86 @@ initgenenames = unique(seq$gene_id)
 raw = matrix(nrow = 541, ncol = 20502)
 rownames(raw) = initsamplenames
 colnames(raw) = initgenenames
-for (i in 1:nrow(raw)) {
-    gene_name = raw[1,1]
-    tmp = filter(seq, gene_id == gene_name) >%>
-    select(raw)
+
+for (i in 1:ncol(raw)) {
+    gene = as.vector(initgenenames[i])
+    tmpreadcount = filter(seq, gene_id == gene) %>%
+    select(submitted_sample_id, raw_read_count)
+
+    for (j in 1:nrow(tmpreadcount)) {
+        sample = as.matrix(tmpreadcount[j,1])
+        raw[sample, gene] = as.numeric(tmpreadcount[j, 2])
+    }
+    print(paste("Finished processing ", gene))
 }
+
+## save the matrix:
+## dput(raw, file = 'raw_read_count.txt')
+
+## need to SVD the raw read count and validate the Creighton et al results
+
+## load obesity gene names and series matrix data
+library(hgu133a.db) ## load library for microarray annotation
+
+## read series matrix (microarray) data
+## gse24185exp = read.table('./GSE24185_series_matrix.txt', header=T,
+##                          sep='',comment.char='!', row.names=1)
+
+## read in the obesity gene file:
+obsgenenames = readLines('obsGenes.txt')
+
+## check the valid columns to get from the hgu133a.db
+columns(hgu133a.db)
+
+## select the gene symbols that are assigned to the probes:
+genesym = select(hgu133a.db, keys = obsgenenames, columns = 'SYMBOL')
+
+## OR map the probe IDs to the symbols:
+genesym2 = mapIds(hgu133a.db, keys = obsgenenames, column = 'SYMBOL', 
+                  keytype = 'PROBEID', multiVals = 'first')
+
+## NOTE: this only takes the first gene symbol that the probe ID is
+## matched to, if the ID has multiple gene values.
+
+## going to use the genesym2 data from here:
+
+## get unique gene symbols and remove NA:
+genesym2 = unique(genesym2)[2:length(genesym2)]
+genesym2 = sort(genesym2) ## sort the symbols
+
+## find which columns of the raw data I need:
+colind = which(colnames(raw) %in% genesym2)
+
+## extract the columns:
+obsgeneraw = raw[,colind]
+
+## there is a row of NAs in the data, so delete that:
+which(is.na(obsgeneraw[,1] == T)) ## to find which row has the NAs
+obsgeneraw = obsgeneraw[-221,] ## delete the row of NAs
+
+## scale the data so it has mean of 0, standard deviation of 1:
+scaledobsgene = scale(obsgeneraw)
+
+## make the max and min values to be 3 or -3:
+scaledobsgene[scaledobsgene >= 3] = 3
+scaledobsgene[scaledobsgene <= -3] = -3
+
+## change the rownames so that it matches the TCGA sample names
+rownames(scaledobsgene) = gsub(pattern = '-[[:alnum:]]{3}-[[:alnum:]]{3}-[[:alnum:]]{4}-[[:alnum:]]{2}',
+                               replacement = '', rownames(scaledobsgene))
+
+## Import the clinical data to match the scaledobsgene.
+clin = read.table('ucec_clinical_patient.txt', sep = '\t', skip = 1,
+                  header = T)
+clin = clin[-1,] ## remove random header
+
+## get height and weight data:
+hwdata = clin[,c('weight','height')]
+rownames(hwdata) = clin$bcr_patient_barcode ## get rownames
+
+## remove any samples with no height or weight data:
+hwdata = hwdata[-(which(hwdata == '[Not Available]')),]
+hwdata = hwdata[-(which(hwdata[,2] == '[Not Available]')),]
+
+
 

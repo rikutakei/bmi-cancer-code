@@ -33,4 +33,61 @@ Load the RNA-seq data into R.
 Need to reorganise the data into genes-by-samples matrix
     - use dplyr (look at the R code)
 
+===============================================================================
+
+15 June 2015
+
+-------------------------------------------------------------------------------
+
+There's about 541 samples and 20502 genes.
+    - Took about 1 second per gene, so about 5 hours to run/make the whole 
+        raw read count file
+        - stored in the data/task02 directory as raw_read_count.txt
+
+Need to get the obesity gene probes from the Creighton et al paper
+    - move the data from the bmi-markdown directory
+
+The obesity gene file doesn't actually have the gene names in it
+    - Need to identify it by annotating the obesity probe IDs
+
+When the 799 obesity probes were annotated (using the 'select' function),
+the probes mapped to 875 genes
+    - Some of them were NAs, but some had multiple genes per probes
+    - there were 755 unique genes (excluding the NAs)
+
+Was able to keep it to 799 when I used the 'mapIds' function, but don't know
+if this is any good.
+    - there were 692 unique genes (excluding the NAs)
+
+Using the 692 unique genes from mapIds function, need to check which genes
+are actually present in the raw data
+    - there were 645 out of 692 genes present in the raw data
+
+Extracted these 645 genes for all the samples and put it into a matrix.
+
+
+===============================================================================
+
+16 June 2015
+
+-------------------------------------------------------------------------------
+
+When I standardised the data to have Mean of 0, and standard deviation of
+1, I kept getting NA as a result
+    - Found out that there was a single row that had NAs (row 221)
+    - removed the row and everything ran fine
+
+Now I'll have to match the clinical data (i.e. BMI) with the RNA-seq data
+
+Imported the TCGA clinical data into R
+    - extracted the height and weight data from it
+    - need to calculate the BMI for each patient
+
+The problem with the TCGA and ICGC data is that the sample names are a
+little bit different
+    - ICGC have extra trailing random ID numbers...
+
+Used gsub to remove the extra IDs
+    - see code
+
 
