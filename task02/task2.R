@@ -102,5 +102,17 @@ rownames(hwdata) = clin$bcr_patient_barcode ## get rownames
 hwdata = hwdata[-(which(hwdata == '[Not Available]')),]
 hwdata = hwdata[-(which(hwdata[,2] == '[Not Available]')),]
 
+## need to identify which sample names are repeated:
+tmprow = rownames(scaledobsgene) ## get rownames
+repind = table(tmprow) > 1 ## find any names that are repeated
+repnames = unique(tmprow)[repind] ## get the sample names that are repeated
+
+## for loop to graph the replicates to decide which one should be
+## discarded:
+for (i in 1:length(repnames)) {
+    ind = which(rownames(scaledobsgene) == repnames[i])
+    heatmap.2(scaledobsgene[ind,], trace = 'none', col = 'bluered',
+              scale = 'none', labRow = ind)
+}
 
 

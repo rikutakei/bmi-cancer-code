@@ -91,3 +91,20 @@ Used gsub to remove the extra IDs
     - see code
 
 
+===============================================================================
+
+25 June 2015
+
+-------------------------------------------------------------------------------
+
+There were 21 duplicates and 3 triplicates in the sample names out of
+509 primary tumour samples in the data set
+    - see the code for the duplicates and triplicates
+
+Able to get the duplicating samples - plot them to assess which one
+is the bad one
+    -heat map?
+
+
+
+
