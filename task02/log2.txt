@@ -91,3 +91,41 @@ Used gsub to remove the extra IDs
     - see code
 
 
+===============================================================================
+
+17 June 2015
+
+-------------------------------------------------------------------------------
+
+Created a matrix of height and weight data (hwdata - see code)
+    - remove the '[Not Available]' samples
+        - resulted in 512 valid samples with both height and weight data
+
+Need to calculate the BMI status for each of the samples
+    - BMI = weight/(height)^2
+
+Converted the height/weight data into numerical matrix from character matrix
+    - I hate factors...
+
+Found a sample that has a wrong height data
+    - probably 166cm instead of 66cm
+
+Need to match which samples are in the raw read count data
+    - matched the samples with BMI
+        - total of 511 samples (but with some duplicates - different samples
+            from the same patient??)
+        - need primary tumour data ONLY
+            - might have other samples in there that is making the duplicates
+            - need to re-extract the RNA-seq data
+
+Got the specimen.UCEC-US.tsv file from the ICGC data portal
+    - contains the tumour sample type data
+
+Even after extracting only primary tumours, there were 21 duplicates and 3
+triplicates
+
+
+
+
+
+

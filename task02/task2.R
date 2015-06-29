@@ -12,6 +12,7 @@ seq = read.table('exp_seq.UCEC-US.tsv', sep = '\t', header = T)
 
 ## the file format is useless, so use dplyr to manipulate it:
 library(dplyr)
+library(gplots)
 
 seq = tbl_df(seq) ## change data frame into tbl class
 
@@ -78,16 +79,28 @@ obsgeneraw = raw[,colind]
 which(is.na(obsgeneraw[,1] == T)) ## to find which row has the NAs
 obsgeneraw = obsgeneraw[-221,] ## delete the row of NAs
 
+## need to find which samples are actually from the primary tumour site
+## load specimen data:
+specdata = read.table(file = 'specimen.UCEC-US.tsv', sep = '\t',
+                      header = T)
+primtum = specdata[specdata$specimen_type == 'Primary tumour - solid tissue',]
+primtumid = as.vector(primtum$submitted_specimen_id)
+
 ## scale the data so it has mean of 0, standard deviation of 1:
 scaledobsgene = scale(obsgeneraw)
+scaledobsgene = scaledobsgene[order(rownames(scaledobsgene)),] ## order by rownames
 
 ## make the max and min values to be 3 or -3:
 scaledobsgene[scaledobsgene >= 3] = 3
 scaledobsgene[scaledobsgene <= -3] = -3
 
 ## change the rownames so that it matches the TCGA sample names
-rownames(scaledobsgene) = gsub(pattern = '-[[:alnum:]]{3}-[[:alnum:]]{3}-[[:alnum:]]{4}-[[:alnum:]]{2}',
+specimenid = gsub(pattern = '-[[:alnum:]]{3}-[[:alnum:]]{4}-[[:alnum:]]{2}',
                                replacement = '', rownames(scaledobsgene))
+
+## find which of these samples are from the primary tumour site:
+ind = which(!(primtumid %in% specimenid))
+scaledobsgene = scaledobsgene[-ind,]
 
 ## Import the clinical data to match the scaledobsgene.
 clin = read.table('ucec_clinical_patient.txt', sep = '\t', skip = 1,
@@ -101,6 +114,35 @@ rownames(hwdata) = clin$bcr_patient_barcode ## get rownames
 ## remove any samples with no height or weight data:
 hwdata = hwdata[-(which(hwdata == '[Not Available]')),]
 hwdata = hwdata[-(which(hwdata[,2] == '[Not Available]')),]
+
+## convert to numerical matrix
+rows = rownames(hwdata)
+hwdata = as.matrix((hwdata))
+hwdata = apply(hwdata, 2, as.numeric)
+rownames(hwdata) = rows
+
+## found a sample with a height of 66 cm (probs should be 166cm)
+hwdata[hwdata[,2] < 100, 2] = 100 + hwdata[hwdata[,2] < 100, 2]
+
+## calculate BMI:
+bmi = hwdata[,1]/((hwdata[,2] / 100) ^ 2) ## need to convert height into m
+bmi = round(bmi, 2)
+hwdata = cbind(hwdata, bmi)
+
+tcgaid = gsub(pattern = '-[[:alnum:]]{3}-[[:alnum:]]{3}-[[:alnum:]]{4}-[[:alnum:]]{2}',
+                               replacement = '', rownames(scaledobsgene))
+
+
+
+
+
+ #check which samples have BMI data:
+#bmidataind = which(!(rownames(scaledobsgene) %in% rownames(hwdata)))
+#scaledobsgene = scaledobsgene[-bmidataind,]
+
+ #select the unique BMI samples:
+#hwdata = hwdata[-(which(!(rownames(hwdata) %in% rownames(scaledobsgene)))),]
+
 
 
 
