@@ -132,10 +132,6 @@ hwdata = cbind(hwdata, bmi)
 tcgaid = gsub(pattern = '-[[:alnum:]]{3}-[[:alnum:]]{3}-[[:alnum:]]{4}-[[:alnum:]]{2}',
                                replacement = '', rownames(scaledobsgene))
 
-
-
-
-
  #check which samples have BMI data:
 #bmidataind = which(!(rownames(scaledobsgene) %in% rownames(hwdata)))
 #scaledobsgene = scaledobsgene[-bmidataind,]
@@ -144,5 +140,17 @@ tcgaid = gsub(pattern = '-[[:alnum:]]{3}-[[:alnum:]]{3}-[[:alnum:]]{4}-[[:alnum:
 #hwdata = hwdata[-(which(!(rownames(hwdata) %in% rownames(scaledobsgene)))),]
 
 
+## need to identify which sample names are repeated:
+tmprow = rownames(scaledobsgene) ## get rownames
+repind = table(tmprow) > 1 ## find any names that are repeated
+repnames = unique(tmprow)[repind] ## get the sample names that are repeated
+
+## for loop to graph the replicates to decide which one should be
+## discarded:
+for (i in 1:length(repnames)) {
+    ind = which(rownames(scaledobsgene) == repnames[i])
+    heatmap.2(scaledobsgene[ind,], trace = 'none', col = 'bluered',
+              scale = 'none', labRow = ind)
+}
 
 
