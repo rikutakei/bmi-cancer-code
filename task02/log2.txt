@@ -124,7 +124,8 @@ Got the specimen.UCEC-US.tsv file from the ICGC data portal
 Even after extracting only primary tumours, there were 21 duplicates and 3
 triplicates
 
-=======
+===============================================================================
+
 25 June 2015
 
 -------------------------------------------------------------------------------
@@ -136,6 +137,20 @@ There were 21 duplicates and 3 triplicates in the sample names out of
 Able to get the duplicating samples - plot them to assess which one
 is the bad one
     -heat map?
+
+===============================================================================
+
+25 June 2015
+
+-------------------------------------------------------------------------------
+
+Outputted the heatmaps to 'replicates.pdf'
+
+Need to decide which sample to use in the SVD
+    - see code
+
+Managed to do the SVD analysis and produced heatmaps
+    - seems like the higher the BMI, the lower the gene expression
 
 
 

@@ -147,10 +147,83 @@ repnames = unique(tmprow)[repind] ## get the sample names that are repeated
 
 ## for loop to graph the replicates to decide which one should be
 ## discarded:
+pdf(file = 'replicates.pdf',width = 8) ## output the heatmaps
+
 for (i in 1:length(repnames)) {
     ind = which(rownames(scaledobsgene) == repnames[i])
     heatmap.2(scaledobsgene[ind,], trace = 'none', col = 'bluered',
-              scale = 'none', labRow = ind)
+              scale = 'none', labRow = ind, cexRow = 0.9)
 }
+
+dev.off()
+
+## make a vector of the samples to be used in SVD
+
+## These are the samples I've chosen to keep:
+tmp = c(47,64,68,124,140,142,152,155,166,168,170,172,286,290,292,295,
+        297,299,302,305,307,310,414,416)
+
+tmp2 = vector()
+for (i in 1:length(repnames)) {
+    ind = which(rownames(scaledobsgene) == repnames[i])
+    tmp2 = append(tmp2, ind)
+}
+
+tmp3 = tmp2[which(tmp2 %in% tmp == F)] ## the unwanted sample row index
+
+## remove the duplicated samples:
+scaledobsgene = scaledobsgene[-tmp3,]
+
+## find all the samples that have BMI data:
+tmp = which(rownames(hwdata) %in% rownames(scaledobsgene))
+tmp = rownames(hwdata)[tmp]
+
+scaledobsgene = scaledobsgene[tmp,]
+hwdata = hwdata[tmp,]
+
+## make colours for BMI:
+obsCol = greenred(nrow(scaledobsgene))[rank(hwdata[,3])]
+
+## correlation distance function:
+distfun = function(x) { as.dist(1-cor(t(x))) }
+
+## make heatmap using the obesity data:
+heatmap.2(t(scaledobsgene), trace = 'none', col = 'bluered',
+          scale = 'none', ColSideColors = obsCol, distfun = distfun)
+
+## make heatmap, ordered by BMI:
+ord = order(hwdata[,3])
+heatmap.2(t(scaledobsgene)[,ord], trace = 'none', col = 'bluered',
+          scale = 'none', ColSideColors = obsCol[ord], distfun = distfun,
+          Colv = 'none')
+
+## make BMI metagene from the expression data:
+## scaled BMI metagene:
+scaledsvd = svd(t(scaledobsgene))
+scaledmetagene = rank(scaledsvd$v[,1])/nrow(scaledobsgene)
+
+## Unscaled (non-standardised) BMI metagene:
+obsdat = obsgeneraw
+tcgaid = gsub(pattern = '-[[:alnum:]]{3}-[[:alnum:]]{3}-[[:alnum:]]{4}-[[:alnum:]]{2}',
+                               replacement = '', rownames(obsdat))
+rownames(obsdat) = tcgaid
+obsdat = obsdat[tmp,]
+
+unscaledsvd = svd(t(obsdat))
+unscaledmetagene = -unscaledsvd$v[,1]
+
+## compare metagene:
+plot(scaledmetagene,unscaledmetagene)
+
+## add metagene to the heatmap:
+heatmap.2(t(scaledobsgene), trace = 'none', col = 'bluered',
+          scale = 'none', ColSideColors = bluered(length(scaledmetagene))[rank(scaledmetagene)])
+
+## re-order heatmap based on metagene values:
+ordmg = order(scaledmetagene)
+heatmap.2(t(scaledobsgene)[,ordmg], trace = 'none', col = 'bluered',
+          scale = 'none', Colv = F, Rowv = T,
+          ColSideColors = bluered(length(scaledmetagene))[rank(scaledmetagene)][ordmg])
+
 
 
