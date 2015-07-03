@@ -129,9 +129,6 @@ bmi = hwdata[,1]/((hwdata[,2] / 100) ^ 2) ## need to convert height into m
 bmi = round(bmi, 2)
 hwdata = cbind(hwdata, bmi)
 
-tcgaid = gsub(pattern = '-[[:alnum:]]{3}-[[:alnum:]]{3}-[[:alnum:]]{4}-[[:alnum:]]{2}',
-                               replacement = '', rownames(scaledobsgene))
-
  #check which samples have BMI data:
 #bmidataind = which(!(rownames(scaledobsgene) %in% rownames(hwdata)))
 #scaledobsgene = scaledobsgene[-bmidataind,]
@@ -141,6 +138,10 @@ tcgaid = gsub(pattern = '-[[:alnum:]]{3}-[[:alnum:]]{3}-[[:alnum:]]{4}-[[:alnum:
 
 
 ## need to identify which sample names are repeated:
+tcgaid = gsub(pattern = '-[[:alnum:]]{3}-[[:alnum:]]{3}-[[:alnum:]]{4}-[[:alnum:]]{2}',
+                               replacement = '', rownames(scaledobsgene))
+rownames(scaledobsgene) = tcgaid
+
 tmprow = rownames(scaledobsgene) ## get rownames
 repind = table(tmprow) > 1 ## find any names that are repeated
 repnames = unique(tmprow)[repind] ## get the sample names that are repeated
