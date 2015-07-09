@@ -227,4 +227,9 @@ heatmap.2(t(scaledobsgene)[,ordmg], trace = 'none', col = 'bluered',
           ColSideColors = bluered(length(scaledmetagene))[rank(scaledmetagene)][ordmg])
 
 
+######################################################################
+
+
+
+
 
