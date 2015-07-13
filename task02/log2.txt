@@ -152,6 +152,49 @@ Need to decide which sample to use in the SVD
 Managed to do the SVD analysis and produced heatmaps
     - seems like the higher the BMI, the lower the gene expression
 
+===============================================================================
+
+13 July 2015
+
+-------------------------------------------------------------------------------
+
+
+Notes from the meeting:
+
+Quality assessment:
+    - make density plots for all the samples (on log scale)
+        -should look similar and bad samples will deviate
+    - calculate correlation matrix for samples across all genes.
+        - plot this as a heatmap
+        - good samples should cluster together
+            - correlation for good samples should be >0.6
+        -use hclust and cutree to identify poor samples and remove these
+    - remake correlation matrix 
+        - repeat until no bad samples
+
+Replicate picking:
+    - make scatterplots of the replicate pairs
+        - all genes, use pch='.' to get small points
+    - use the heatmap of the sample correlation matrix to help figure out which replicates to use
+
+Normalisation:
+    - use the limma voom function  on the count data 
+        - see the limma user guide
+    - remove genes with low count values before running voom
+    - remake the density plots to see if the samples are now fairly uniform
+
+Metagene creation:
+    - see the code in the email
+
+Compare to clinical variables:
+    -scatterplot of BMI vs BMI metagene
+    -boxplot of BMI groups (<25, 25~30, >30) vs BMI metagene
+    - plot BMI metagenes against other variables
+
+Extra:
+    - do differential expression analysis of BMI>30  vs BMI<30 in the endometrial data (limma)
+    - do the significant genes overlap with the list of 799?
+    - use these genes to create a BMI metagene and compare with BMI and other clinical variables
 
 
 
