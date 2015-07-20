@@ -229,6 +229,96 @@ heatmap.2(t(scaledobsgene)[,ordmg], trace = 'none', col = 'bluered',
 
 ######################################################################
 
+## Quality assessment
+
+## make density plots for all the samples on log scale:
+
+rawlog = log2(raw)
+d = density(rawlog[1,])
+plot(d, ylim = c(0,0.2))
+
+for (i in 2:nrow(rawlog)) {
+    d = density(rawlog[i,])
+    lines(d)
+}
+
+
+## make correlation matrix for samples across all genes:
+c = cor(t(raw), use='all.obs',method='pearson')
+
+heatmap.2(c, trace = 'none', col = 'bluered',scale = 'none')
+
+## get the dendrogram on the heatmap
+hc = hclust(dist(c))
+plot(hc, cex = 0.1, hang = -1) #show dendrogram
+
+tmpcut = cutree(hc, k = 2) #cut dendrogram into two groups
+table(tmpcut) # check which group to remove
+
+ind = which(tmpcut == 2)
+finalsample = raw[-ind,] # remove the bad samples
+
+## repeat the above until no bad samples (correlation < 0.6)
+## takes about 3 cycles (about 312 samples in the end)
+
+## check for any replicates:
+tcgaid = gsub(pattern = '-[[:alnum:]]{3}-[[:alnum:]]{3}-[[:alnum:]]{4}-[[:alnum:]]{2}',
+                               replacement = '', rownames(finalsample))
+
+rownames(finalsample) = tcgaid
+
+## scatterplot stuff (?):
+plot(x = finalsample[4,], y = finalsample[101,], pch = '.')
+
+
+## voom normalisation:
+
+library(edgeR)
+library(limma)
+
+## need to remove low count data:
+count = t(finalsample)
+count = count[rowSums(cpm(count)) > 9,]
+
+dge = DGEList(counts = count)
+dge = calcNormFactors(dge)
+
+
+## need to get metagene data from the Creighton et al dataset, so you
+## can use it to transform the endometrial data based on the obesity 
+## metagene.
+
+library(hgu133a.db) ## load library for microarray annotation
+
+## read series matrix (microarray) data
+gse24185exp = read.table('./GSE24185_series_matrix.txt', header=T,
+                          sep='',comment.char='!', row.names=1)
+
+## read in the obesity gene file:
+obsgenenames = readLines('obsGenes.txt')
+
+## matrix of 799 obesity gene data:
+obsgenedat = as.matrix(gse24185exp[obsgenenames,])
+
+## get gene symbols and map it to the data:
+genesym2 = mapIds(hgu133a.db, keys = obsgenenames, column = 'SYMBOL', 
+                  keytype = 'PROBEID', multiVals = 'first')
+rownames(obsgenedat) = as.vector(genesym2)
+
+tmp = which(is.na(rownames(obsgenedat)))
+obsgenedat = obsgenedat[-tmp,]
+
+## normalise the obesity data:
+normobsdat = t(apply(obsgenedat, 1, function(x) (x-mean(x))/sd(x)))
+
+
+
+
+
+
+
+
+
 
 
 

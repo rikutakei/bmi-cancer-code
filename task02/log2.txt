@@ -158,7 +158,6 @@ Managed to do the SVD analysis and produced heatmaps
 
 -------------------------------------------------------------------------------
 
-
 Notes from the meeting:
 
 Quality assessment:
@@ -195,6 +194,23 @@ Extra:
     - do differential expression analysis of BMI>30  vs BMI<30 in the endometrial data (limma)
     - do the significant genes overlap with the list of 799?
     - use these genes to create a BMI metagene and compare with BMI and other clinical variables
+
+===============================================================================
+
+20 July 2015
+
+-------------------------------------------------------------------------------
+
+Have done some of the stuff on the analysis notes.
+
+Some difficulties and problems:
+    - not sure how to interpret the scatterplot for the replicates
+        -> check what kind of sample these are
+        -> doesn't look too different, so pick one
+    - Do I do voom normalisation first before the correlation matrix analysis?
+        -> probs not
+    - I did the correlation matrix thing on the raw data, without normalising etc... do I have to normalise it first?
+        -> NO - don't want to normalise crappy data first (gonna make it harder to determine the shitty data)
 
 
 
