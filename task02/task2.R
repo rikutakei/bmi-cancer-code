@@ -305,16 +305,42 @@ genesym2 = mapIds(hgu133a.db, keys = obsgenenames, column = 'SYMBOL',
                   keytype = 'PROBEID', multiVals = 'first')
 rownames(obsgenedat) = as.vector(genesym2)
 
+## remove the NA gene symbols:
 tmp = which(is.na(rownames(obsgenedat)))
 obsgenedat = obsgenedat[-tmp,]
 
+## check which genes to use for SVD:
+
+## get obesity gene names:
+obsgene = as.vector(rownames(obsgenedat))
+obsgene = unique(obsgene)
+
+## which of these obesity genes are present in the endometrial cancer
+## data?
+## Get a list of genes in the endometrial cancer:
+tmp = as.vector(rownames(count))
+genelist = which(obsgene %in% tmp)
+genelist = obsgene[genelist]
+
+## use the genes identified from the endometrial cancer to do SVD on the
+## Creighton et al data:
+dat = obsgenedat[genelist,]
+
 ## normalise the obesity data:
-normobsdat = t(apply(obsgenedat, 1, function(x) (x-mean(x))/sd(x)))
+normobsdat = apply(obsgenedat, 1, function(x) (x-mean(x))/sd(x))
 
+obssvd = svd(normobsdat) ## do SVD
 
+## make transformation matrix:
+transmatrix = diag(1/obssvd$d) %*% t(obssvd$u)
 
+## apply it to the endometrial cancer data:
+cescdata = count[genelist,]
 
+##(normalise cescdata??)
 
+cescmeta = t(transmatrix %*% cescdata) # apply transformation matrix
+cescmeta = cescmeta[,1]
 
 
 

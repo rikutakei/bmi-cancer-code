@@ -213,4 +213,28 @@ Some difficulties and problems:
         -> NO - don't want to normalise crappy data first (gonna make it harder to determine the shitty data)
 
 
+===============================================================================
+
+22 July 2015
+
+-------------------------------------------------------------------------------
+
+Need to do a SVD on the Creighton et al data to get a transformation matrix.
+    - the number of genes used in the SVD must match the number of genes in
+      the endometrial cancer data
+    - multiple probes may match to a single gene in the Creighton data
+
+There were 777 genes (out of 799) that were not NAs
+
+There were 695 unique genes within the 777 non-NA genes
+
+There were 643 genes from the Creighton data that matched in the endometrial cancer data
+    - when I checked back to the Creighton data, all 643 genes were unique
+        - i.e. no need to merge any genes - just use these 643 genes
+
+Now I have to SVD the 643 genes by 103 samples and take the transformation matrix to the endometrial cancer data.
+
+
+
+
 
