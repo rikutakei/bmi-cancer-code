@@ -327,7 +327,7 @@ genelist = obsgene[genelist]
 dat = obsgenedat[genelist,]
 
 ## normalise the obesity data:
-normobsdat = apply(obsgenedat, 1, function(x) (x-mean(x))/sd(x))
+normobsdat = t(apply(dat, 1, function(x) (x-mean(x))/sd(x)))
 
 obssvd = svd(normobsdat) ## do SVD
 
@@ -338,11 +338,17 @@ transmatrix = diag(1/obssvd$d) %*% t(obssvd$u)
 cescdata = count[genelist,]
 
 ##(normalise cescdata??)
+normcescdata = t(apply(cescdata, 1, function(x) (x-mean(x))/sd(x)))
 
-cescmeta = t(transmatrix %*% cescdata) # apply transformation matrix
+normcescdata[normcescdata > 3] = 3
+normcescdata[normcescdata < -3] = -3
+
+cescmeta = t(transmatrix %*% normcescdata) # apply transformation matrix
 cescmeta = cescmeta[,1]
 
-
+## produce heatmap of the metagene with endometrial data:
+heatmap.2(normcescdata, scale = 'none', col = 'bluered', trace = 'none', 
+          ColSideColors = bluered(length(cescmeta))[rank(cescmeta)])
 
 
 
