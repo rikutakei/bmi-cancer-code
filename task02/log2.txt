@@ -234,6 +234,32 @@ There were 643 genes from the Creighton data that matched in the endometrial can
 
 Now I have to SVD the 643 genes by 103 samples and take the transformation matrix to the endometrial cancer data.
 
+===============================================================================
+
+24 July 2015
+
+-------------------------------------------------------------------------------
+
+Made the transformation matrix with the Creighton et al data, using the 643 genes.
+
+Used this transformation matrix on the endometrial data (312 samples)
+    - the heatmap looked like it corresponded to the metagene created from the transformation matrix
+
+Now I need to check whether the metagene is associated with the clinical data of the endometrial data
+
+===============================================================================
+
+27 July 2015
+
+-------------------------------------------------------------------------------
+
+Plotted obesity metagene vs BMI status
+    - used only the samples that had the BMI data
+    - Found that there were no association of metagene with the BMI status...
+
+Now I need to perform differential expression analysis.
+    - see what genes are DEed in the obese vs normal+overweight samples.
+
 
 
 

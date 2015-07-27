@@ -340,6 +340,7 @@ cescdata = count[genelist,]
 ##(normalise cescdata??)
 normcescdata = t(apply(cescdata, 1, function(x) (x-mean(x))/sd(x)))
 
+## for better colour on heatmap
 normcescdata[normcescdata > 3] = 3
 normcescdata[normcescdata < -3] = -3
 
@@ -350,7 +351,34 @@ cescmeta = cescmeta[,1]
 heatmap.2(normcescdata, scale = 'none', col = 'bluered', trace = 'none', 
           ColSideColors = bluered(length(cescmeta))[rank(cescmeta)])
 
+## reorder the heatmap based on the metagene values:
+ord = order(cescmeta)
+heatmap.2(normcescdata[,ord], scale = 'none', col = 'bluered', trace = 'none', 
+          ColSideColors = bluered(length(cescmeta))[rank(cescmeta)][ord],
+          Colv = F, Rowv = T)
 
+## Need to check whether the metagene corresponds to BMI/obesity:
+## get BMI data for the samples used in the cescmeta data
+samplenames = names(cescmeta)
+ind = which(rownames(hwdata) %in% samplenames)
+cescbmi = as.data.frame(hwdata[ind,3])
+
+bmimeta = cescmeta[rownames(cescbmi)]
+
+tmp = cescbmi[,1]
+
+for(i in 1:length(tmp)){
+    if (cescbmi[i,1] <= 25) {
+        tmp[i] = 'normal'
+    } else if ((cescbmi[i,1] > 25) && cescbmi[i,1] <= 30) {
+        tmp[i] = 'obese'
+    } else {
+        tmp[i] = 'overweight'
+    }
+}
+
+cescbmi = cbind(cescbmi, tmp)
+names(cescbmi) = c('bmi_value', 'bmi_status')
 
 
 
