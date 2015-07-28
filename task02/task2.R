@@ -363,6 +363,53 @@ samplenames = names(cescmeta)
 ind = which(rownames(hwdata) %in% samplenames)
 cescbmi = as.data.frame(hwdata[ind,3])
 
+
+#####################################################################
+## some aside codes:
+
+#x = rownames(cescbmi)
+#cescdata2 = count[genelist,x]
+
+#normcescdata2 = t(apply(cescdata2, 1, function(x) (x-mean(x))/sd(x)))
+
+## for better colour on heatmap
+#normcescdata2[normcescdata2 > 3] = 3
+#normcescdata2[normcescdata2 < -3] = -3
+
+#cescmeta2 = t(transmatrix %*% normcescdata2) # apply transformation matrix
+#cescmeta2 = cescmeta2[,1]
+
+## produce heatmap of the metagene with endometrial data:
+#heatmap.2(normcescdata2, scale = 'none', col = 'bluered', trace = 'none', 
+          #ColSideColors = bluered(length(cescmeta2))[rank(cescmeta2)])
+
+## reorder the heatmap based on the metagene values:
+#ord = order(cescmeta2)
+#heatmap.2(normcescdata2[,ord], scale = 'none', col = 'bluered', trace = 'none', 
+          #ColSideColors = bluered(length(cescmeta2))[rank(cescmeta2)][ord],
+          #Colv = F, Rowv = T)
+
+#tmp = cescbmi[,1]
+
+#for(i in 1:length(tmp)){
+    #if (cescbmi[i,1] <= 25) {
+        #tmp[i] = 'normal'
+    #} else if ((cescbmi[i,1] > 25) && cescbmi[i,1] <= 30) {
+        #tmp[i] = 'obese'
+    #} else {
+        #tmp[i] = 'overweight'
+    #}
+#}
+
+#cescbmi = cbind(cescbmi, tmp)
+#names(cescbmi) = c('bmi_value', 'bmi_status')
+
+#meta = 1-cescmeta2
+
+#boxplot(meta~cescbmi$bmi_status)
+#plot(cescbmi$bmi_value, meta, pch = 20)
+#####################################################################
+
 bmimeta = cescmeta[rownames(cescbmi)]
 
 tmp = cescbmi[,1]
@@ -380,6 +427,9 @@ for(i in 1:length(tmp)){
 cescbmi = cbind(cescbmi, tmp)
 names(cescbmi) = c('bmi_value', 'bmi_status')
 
+## Make plots:
+boxplot(bmimeta~cescbmi$bmi_status)
+plot(cescbmi$bmi_value, bmimeta, pch=20)
 
 
 
