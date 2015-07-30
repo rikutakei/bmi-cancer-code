@@ -228,6 +228,7 @@ heatmap.2(t(scaledobsgene)[,ordmg], trace = 'none', col = 'bluered',
 
 
 ######################################################################
+## post-meeting with Mik:
 
 ## Quality assessment
 
