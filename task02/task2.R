@@ -419,9 +419,9 @@ for(i in 1:length(tmp)){
     if (cescbmi[i,1] <= 25) {
         tmp[i] = 'normal'
     } else if ((cescbmi[i,1] > 25) && cescbmi[i,1] <= 30) {
-        tmp[i] = 'obese'
-    } else {
         tmp[i] = 'overweight'
+    } else {
+        tmp[i] = 'obese'
     }
 }
 

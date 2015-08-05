@@ -6,3 +6,17 @@
 
 Thought the task02 code was getting too long, so starting up a new one for differential expression analysis.
 
+===============================================================================
+
+5 August 2015
+
+-------------------------------------------------------------------------------
+
+Started working on the DEG analysis
+
+There were 482 samples in the data that also had a BMI data (no duplicates).
+
+Normalising using voom function from limma.
+    -removed genes with small count data (from 20502 genes to 19257 genes)
+
+The top table (and volcano plot) doesn't show any gene that is differentially expressed...
