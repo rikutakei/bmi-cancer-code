@@ -17,10 +17,11 @@ for (i in 1:length(file)){
 
 ## make a list of 33 and put all the patient data in this list:
 dat_list = vector("list",33) ## make an empty list with 33 items
-txt = gsub("*_clinical_patient.txt","",file)
+txt = gsub("*.txt","",file)
 for (i in 1:length(txt)) {
     dat_list[[i]] = get(txt[i])
 }
+txt = gsub("*_clinical_patient.txt","",file)
 names(dat_list) = txt ## rename the names of the list
 
 ## need to find which patient data has both weight and height data:

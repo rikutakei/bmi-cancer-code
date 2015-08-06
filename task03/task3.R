@@ -62,7 +62,8 @@ top = topTable(fit, coef=2, n = nrow(counts)) ## top-ranked DEGs
 
 volcanoplot(fit,coef=2)
 
-
+## get DEG from top table:
+cescdeg = top[top$adj.P.Val < 0.05,]
 
 
 
