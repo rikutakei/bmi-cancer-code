@@ -1,0 +1,9 @@
+===============================================================================
+
+2 September 2015
+
+-------------------------------------------------------------------------------
+
+Turns out that I needed to log the data before quality control/removing the bad samples.
+    - Re-do the analysis to see if I get different results
+

@@ -53,4 +53,3 @@ DEG analysis showed that there were only 4 genes that were differentially expres
 Now, I need to forget/leave the UCEC data and look into other cancer types
     - see if other cancer types have any correlation between BMI and gene expression
 
-END OF TASK 3

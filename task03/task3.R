@@ -107,7 +107,7 @@ ucecdeg = top[top$adj.P.Val < 0.05,]
 degnames = as.vector(rownames(ucecdeg))
 
 ## before doing singular value decomposition, remove samples with correlation less than 0.6
-finalsample = raw
+finalsample = t(raw)
 
 ## repeat this a few times
 c = cor(finalsample, use = 'all.obs', method = 'pearson')
@@ -133,6 +133,9 @@ ord = order(ucecmeta)
 heatmap.2(normdegmat[,ord], trace = 'none', col = 'bluered', scale = 'none',
           ColSideColors = bluered(length(ucecmeta))[rank(ucecmeta)][ord],
           Colv = F, Rowv = T)
+
+plot(ucecbmi[colnames(finalsample),]$bmi,ucecmeta,pch=20, xlab='BMI')
+boxplot(ucecmeta~ucecbmi[colnames(finalsample),]$bmi_status)
 
 #########################################################################
 ## mik's stuff - order by BMI rather than metagene:
