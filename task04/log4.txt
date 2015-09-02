@@ -7,3 +7,14 @@
 Turns out that I needed to log the data before quality control/removing the bad samples.
     - Re-do the analysis to see if I get different results
 
+Some data points had 0 counts which caused some problems with logging
+    - added 1 to all the count data to avoid this
+
+After logging the data, there were no samples that had a correlation of 0.6
+    - No samples were discarded
+
+SVD on Creighton et al. data was done and used to transform the endometrial data
+    - The results didn't change
+        - Metagene from Creighton et al data doesn't correlate with the endometrial data...
+
+Do DEG analysis on endometrial data and compare this with obesity genes identified in Creighton et al. data.
