@@ -1,0 +1,42 @@
+===============================================================================
+
+3 September 2015
+
+-------------------------------------------------------------------------------
+
+Creighton et al data didn't give a great result, so moving onto a different data set
+
+Using the GSE20194 dataset that was used by Fuentes-Mattei et al (2014).
+    - Downloaded the data from http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE20194
+
+Unzipped/untarred the file
+    - contained 278 CEL files (one for each sample)
+    - ls GSM505* > files.txt
+
+Imported the data into Rstudio and RMA normalised the data
+    - 22283 gene probes by 278 samples
+
+Need to extract the gene probes that are associated with BMI
+    - Use supTab3-fixed.csv file
+        - supplementary data from the paper
+
+There are 130 obesity related gene probes, but only 111 unique genes
+    - have to collapse some of the probes
+
+===============================================================================
+
+4 September 2015
+
+-------------------------------------------------------------------------------
+
+The metagene created from the 111 genes seems to capture the overall expression of the Fuentes-Mattei data
+    - not sure whether this correlates with obesity (no BMI data for the samples in this dataset)
+
+Check whether the metagene from Fuentes-Mattei data show any correlation/association with the Creighton data
+    - This dataset has obesity/BMI information
+    - able to see if it really correlates with BMI
+
+Transformed the Creighton dataset, but did not show any significant separation between the obese patients and the normal/overweight patients.
+    - Seems like these metagene isn't showing anything significant...
+        - Still have to check in other cancer datasets (e.g. UCEC, etc.)
+
