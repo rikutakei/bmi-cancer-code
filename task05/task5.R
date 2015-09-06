@@ -94,9 +94,7 @@ heatmap.2(crmat[,ord],trace='none',scale='none',col='bluered',ColSideColors=blue
 ## load clinical data for Creighton data
 crclin = read.csv('GSE24185_clinical.csv')
 
-
-
-
-
-
+## Check if metagene correlates with BMI in creighton data:
+boxplot(crmeta~crclin$bmiStatus)
+plot(crclin$bmi, crmeta, pch=20)
 
