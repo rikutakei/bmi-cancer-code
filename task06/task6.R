@@ -18,5 +18,95 @@ library(gplots)
 library(affy)
 library(WGCNA)
 library(hgu133a.db)
+library(tidyr)
 ######################################################################
+
+##load RNA seq data:
+file = readLines('raw/names.txt')
+file = paste('raw/',file,sep='')
+
+for (i in 1:length(file)) {
+    txt = gsub('raw/exp_seq.','',file[i])
+    txt = gsub('-US.tsv','',txt)
+    txt = paste(txt, 'raw',sep='')
+
+    assign(txt, read.table(file[i], sep = '\t', header = T))
+}
+
+seq = tbl_df(seq) ## change data frame into tbl class
+
+## extract all the raw count data and put it in a matrix:
+icgcToMatrix = function(icgc_seq) {
+    seq = tbl_df(icgc_seq)
+    seq = select(seq, submitted_sample_id, gene_id, raw_read_count)
+    initsamplenames = as.vector(unique(seq$submitted_sample_id))
+    initgenenames = as.vector(unique(seq$gene_id))
+    if ('?' %in% initgenenames) {
+        initgenenames = initgenenames[-which(initgenenames == '?')]
+        seq = filter(seq, gene_id %in% initgenenames)
+    }
+    raw = matrix(nrow = length(initsamplenames), ncol = length(initgenenames))
+    rownames(raw) = initsamplenames
+    colnames(raw) = initgenenames
+
+    for (i in 1:length(initsamplenames)) {
+        sample = initsamplenames[i]
+        tmp = filter(seq, submitted_sample_id == sample)[,2:3]
+
+        for (j in 1:length(initgenenames)) {
+            gene = initgenenames[j]
+            tmp2 = filter(tmp, gene_id == gene)[,2]
+            #print(tmp2)
+            #print(j)
+            if (dim(tmp2)[1] > 1) {
+                raw[sample, gene] = as.numeric(max(tmp2))
+            } else {
+                raw[sample, gene] = as.numeric(tmp2)
+            }
+            #raw[sample, gene] = as.numeric(tmp2)
+        }
+        print(paste('Finished processing ', sample))
+    }
+
+    return(raw)
+}
+
+## Need to do icgcToMatrix to all the datasets:
+data = c('BLCAraw','CESCraw','COADraw','KIRPraw','LIHCraw','READraw','SKCMraw')
+
+for (i in 1:length(data)) {
+    txt = gsub('raw', 'mat', data[i])
+    assign(txt, icgcToMatrix(data[i]))
+}
+
+
+## save the matrix:
+## dput(raw, file = 'raw_read_count.txt')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

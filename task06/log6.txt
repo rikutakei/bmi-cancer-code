@@ -12,3 +12,8 @@ Downloaded 7 cancer data from ICGC website
 The 6 cancer data not on ICGC were: CHOL, DLBC, ESCA, THYM, UCS and UVM.
     - esophageal cancer (ESCA) doesn't have any RNA-seq data, which is a bit dissapointing...
 
+Loaded all 7 cancer data into R
+    - seems like there are unknown genes in the data (shown as '?')
+        - going to remove these for now
+    - seems like there are duplicate samples as well...
+        - will have to merge these into one (maybe use WGCNA?)
