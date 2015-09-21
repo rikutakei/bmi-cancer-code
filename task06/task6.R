@@ -76,7 +76,11 @@ data = c('BLCAraw','CESCraw','COADraw','KIRPraw','LIHCraw','READraw','SKCMraw')
 
 for (i in 1:length(data)) {
     txt = gsub('raw', 'mat', data[i])
-    assign(txt, icgcToMatrix(data[i]))
+    tmp = get(data[i])
+    tmp = icgcToMatrix(tmp)
+    assign(txt, tmp)
+    ## save the matrix:
+    dput(get(txt), file = paste(data[i],'readcount.txt',sep =''))
 }
 
 
@@ -104,6 +108,9 @@ dput(BLCAbmi, file = 'BLCAbmi.txt')
 ##(substitute the cancer code for a different cancer type)
 v = which(rownames(BLCAmat) %in% rownames(BLCAbmi))
 BLCAmat = BLCAmat[v,]
+
+
+
 
 
 
