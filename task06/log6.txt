@@ -17,3 +17,35 @@ Loaded all 7 cancer data into R
         - going to remove these for now
     - seems like there are duplicate samples as well...
         - will have to merge these into one (maybe use WGCNA?)
+
+===============================================================================
+
+20 September 2015
+
+-------------------------------------------------------------------------------
+
+Wrote a function to transform the ICGC data into a matrix form, but this function takes quite a while to run
+    - it does take care of any duplicates and '?' genes though
+        - for duplicates, maximum value was used
+
+I thought some of the data sets had samples with varying number of unique genes, but I couldn't find which one it was...
+    - my function should have taken care of this, but I'm still a bit worried
+
+All the raw read counts are stored as a txt file
+
+Now I need to analyse all 8 cancer data
+
+Loaded all the BMI data into R
+    - made a matrix for each cancer type (stored it as ~~~~bmi.txt)
+
+Identified which samples in each cancer type have BMI data
+    - see code
+
+Almost ready for the analyses
+    - log, standardise, transform, etc
+
+
+
+
+
+

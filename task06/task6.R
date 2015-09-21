@@ -83,28 +83,27 @@ for (i in 1:length(data)) {
 ## save the matrix:
 ## dput(raw, file = 'raw_read_count.txt')
 
+##run icgc_to_tcga function from task 4
 
+## load BMI_data.txt from task1
+all_bmi = dget(file = 'BMI_data.txt')
 
+names(all_bmi) ## all the names of the cancer in this list
 
+## get BMI info from this list
+tmpbmi = all_bmi$blca ##substitute the cancer type for a different one
+BLCAbmi = matrix(nrow = nrow(tmpbmi), ncol = 3)
+rownames(BLCAbmi) = tmpbmi$bcr_patient_barcode
+BLCAbmi[,1] = as.numeric(as.character(tmpbmi$weight_kg_at_diagnosis))
+BLCAbmi[,2] = as.numeric(as.character(tmpbmi$height_cm_at_diagnosis))/100
+BLCAbmi[,3] = BLCAbmi[,1]/(BLCAbmi[,2]^2)
+colnames(BLCAbmi) = c('weight', 'height', 'bmi')
+dput(BLCAbmi, file = 'BLCAbmi.txt')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+##identify the samples that have BMI data and pull it out
+##(substitute the cancer code for a different cancer type)
+v = which(rownames(BLCAmat) %in% rownames(BLCAbmi))
+BLCAmat = BLCAmat[v,]
 
 
 
