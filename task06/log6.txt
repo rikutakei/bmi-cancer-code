@@ -44,6 +44,25 @@ Identified which samples in each cancer type have BMI data
 Almost ready for the analyses
     - log, standardise, transform, etc
 
+Used WGCNA's collapseRows function to remove duplicate samples
+
+===============================================================================
+
+23 September 2015
+
+-------------------------------------------------------------------------------
+
+Loaded the raw data from Creighton
+    - re-checked that the metagene correlates with BMI (it did)
+
+Looped over all 8 cancer types (log10, standardise, then heatmap)
+    - the heatmaps are not looking good
+        - maybe I did something wrong in the making of the actual data
+
+Found the bug!!!
+    - I was standardising the data based on the samples, rather than the genes
+        - i.e. each sample had mean=0,sd=1 over all genes
+
 
 
 
