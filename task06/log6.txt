@@ -63,7 +63,21 @@ Found the bug!!!
     - I was standardising the data based on the samples, rather than the genes
         - i.e. each sample had mean=0,sd=1 over all genes
 
+===============================================================================
 
+29 September 2015
+
+-------------------------------------------------------------------------------
+
+Got all the heatmaps and plots for all 8 cancer types
+    - it seems like there is no correlation with obesity...
+    - maybe problem with data processing
+        - use tidyr on server after committee meeting
+
+Check heatmaps with obesity values later
+
+Started doing some Fuentes-Mattei stuff
+    - use the code from task5 (maybe transfer it to task6 later...)
 
 
 

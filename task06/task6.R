@@ -284,10 +284,74 @@ for(i in 1:length(data)) {
     plot(clin$bmi, r, pch = 20, main = data[i])
 }
 
+######################################################################
 
+Fuentes-Mattei stuff
 
+######################################################################
 
+##look at task5.R and use the first half of the code
+##make sure you change some variable names to prevent overwriting.
 
+##post-Fuentes-Mattei processing:
+## make new matrices using the genes used for Fuentes-Mattei:
+fmgenes = as.vector(tmp$Gene.Symbol)
+fmgenes = fmgenes[-(which(fmgenes == " "))] ##remove bad ones
+data = c('BLCAmat','CESCmat','COADmat','KIRPmat','LIHCmat','READmat','SKCMmat','UCECmat')
+for(i in 1:length(data)) {
+    a = get(data[i])
+    b = t(a[,which(colnames(a) %in% fmgenes)])
+    assign(paste('fmobs',data[i], sep=''), b)
+}
 
+##standardise data:
+data = paste('fmobs',data,sep='')
+for(i in 1:length(data)) {
+    x = get(data[i])
+    x = log10(x + 1)
+    x = t(apply(x, 1, function(x) (x-mean(x))/sd(x)))
+    x[x < -3] = -3
+    x[x > 3] = 3
+    heatmap.2(x, trace='non',scale='none',col='bluered',main=data[i])
+    txt = gsub('obs','std',data[i])
+    assign(txt,x)
+}
+
+## apply transformation matrix to the cancer data:
+
+##make sure that the transformation matrix has the same genes as other cancer types:
+fmobegenemat = fmobegenemat[rownames(fmobsBLCAmat),]
+fmsvd = svd(fmobegenemat)
+fmtransmat = diag(1/fmsvd$d) %*% t(fmsvd$u)
+for(i in 1:length(data)) {
+    txt = gsub('mat','meta',data[i])
+    x = get(gsub('obs','std', data[i]))
+    tmpmeta = t(fmtransmat %*% x)
+    tmpmeta = tmpmeta[,1]
+    tmpmeta = 1-tmpmeta
+    assign(txt,tmpmeta)
+}
+
+##make heatmaps with the metagene:
+for(i in 1:length(data)) {
+    tmp = get(gsub('obs','std', data[i]))
+    m = get(gsub('mat','meta',data[i]))/ncol(tmp)
+    r = rank(m)
+    o = order(r)
+
+    heatmap.2(tmp[,o], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(r))[rank(r)][o], Colv=F, Rowv=T,main = data[i])
+}
+
+##make plots
+for(i in 1:length(data)) {
+    tmp = get(gsub('obs','std', data[i]))
+    m = get(gsub('mat','meta',data[i]))/ncol(tmp)
+    r = rank(m)
+    clin = gsub('mat','bmi',data[i])
+    clin = get(gsub('fmobs','',clin))
+
+    boxplot(r~clin$bmi_status,main = data[i])
+    plot(clin$bmi, r, pch = 20, main = data[i])
+}
 
 
