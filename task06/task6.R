@@ -266,8 +266,8 @@ for(i in 1:length(data)) {
 ##make heatmaps with the metagene:
 for(i in 1:length(data)) {
     tmp = get(paste('std',data[i],sep=''))
-    m = get(gsub('mat','meta',data[i]))/ncol(tmp)
-    r = rank(m)
+    m = get(gsub('mat','meta',data[i]))
+    r = rank(m)/ncol(tmp)
     o = order(r)
 
     heatmap.2(tmp[,o], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(r))[rank(r)][o], Colv=F, Rowv=T,main = data[i])
@@ -276,8 +276,9 @@ for(i in 1:length(data)) {
 ##make plots
 for(i in 1:length(data)) {
     tmp = get(paste('std',data[i],sep=''))
-    m = get(gsub('mat','meta',data[i]))/ncol(tmp)
-    r = rank(m)
+    m = get(gsub('mat','meta',data[i]))
+    r = rank(m)/ncol(tmp)
+    r = 1-r
     clin = get(gsub('mat','bmi',data[i]))
 
     boxplot(r~clin$bmi_status,main = data[i])
@@ -290,12 +291,45 @@ Fuentes-Mattei stuff
 
 ######################################################################
 
-##look at task5.R and use the first half of the code
-##make sure you change some variable names to prevent overwriting.
+## Read in Fuentes-Mattei data:
+files = readLines('../task05/fmraw/files.txt')
+files = paste('../task05/fmraw/',files,sep='')
+fmraw = ReadAffy(filenames = files)
+fmraw = rma(fmraw) ## RMA normalise the data
+fmraw = exprs(fmraw) ## change the format into matrix
+
+fmobsgene = read.csv('../task05/supTab3-fixed.csv') ## list of probe IDs associated with obesity
+
+fmprobeid = fmobsgene$Probe ## get Probe IDs relevant to obesity
+fmobsgenemat = raw[fmprobeid,] ## get the obesity related probes
+
+## There are 130 gene probes, but only 111 unique genes
+unique(fmobsgene$Gene.Symbol) %>% length ## 111 genes
+length(fmprobeid) ## 130 probes
+
+## Collapse the repeated genes using collapseRows from WGCNA library
+collapse = collapseRows(fmobsgenemat, rowGroup=as.vector(fmobsgene$Gene.Symbol),rowID=rownames(fmobsgenemat))
+fmobsgenemat = as.matrix(collapse$datETcollapsed)
+
+fmobsgenemat = t(apply(fmobsgenemat, 1, function(x) (x-mean(x))/sd(x)))
+fmobsgenemat[fmobsgenemat > 3] = 3
+fmobsgenemat[fmobsgenemat < -3] = -3
+
+heatmap.2(fmobsgenemat,trace='none',scale='none',col='bluered')
+
+## Apply SVD to obsgenemat:
+fmsvd = svd(fmobsgenemat)
+fmmeta = rank(fmsvd$v[,1])/ncol(fmobsgenemat)
+fmord = order(fmmeta)
+
+heatmap.2(fmobsgenemat[,fmord],trace='none',scale='none',col='bluered', ColSideColors = bluered(length(fmmeta))[rank(fmmeta)][fmord],Colv=F,Rowv=T)
+
+## Make transformation matrix:
+transmat = diag(1/fmsvd$d) %*% t(fmsvd$u)
 
 ##post-Fuentes-Mattei processing:
 ## make new matrices using the genes used for Fuentes-Mattei:
-fmgenes = as.vector(tmp$Gene.Symbol)
+fmgenes = as.vector(fmobsgene$Gene.Symbol)
 fmgenes = fmgenes[-(which(fmgenes == " "))] ##remove bad ones
 data = c('BLCAmat','CESCmat','COADmat','KIRPmat','LIHCmat','READmat','SKCMmat','UCECmat')
 for(i in 1:length(data)) {
@@ -335,8 +369,8 @@ for(i in 1:length(data)) {
 ##make heatmaps with the metagene:
 for(i in 1:length(data)) {
     tmp = get(gsub('obs','std', data[i]))
-    m = get(gsub('mat','meta',data[i]))/ncol(tmp)
-    r = rank(m)
+    m = get(gsub('mat','meta',data[i]))
+    r = rank(m)/ncol(tmp)
     o = order(r)
 
     heatmap.2(tmp[,o], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(r))[rank(r)][o], Colv=F, Rowv=T,main = data[i])
@@ -345,8 +379,8 @@ for(i in 1:length(data)) {
 ##make plots
 for(i in 1:length(data)) {
     tmp = get(gsub('obs','std', data[i]))
-    m = get(gsub('mat','meta',data[i]))/ncol(tmp)
-    r = rank(m)
+    m = get(gsub('mat','meta',data[i]))
+    r = rank(m)/ncol(tmp)
     clin = gsub('mat','bmi',data[i])
     clin = get(gsub('fmobs','',clin))
 
