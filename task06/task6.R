@@ -167,6 +167,7 @@ heatmap.2(obsgenemat, trace='none',scale='none', col='bluered')
 ##make metagene and check that Creighton data correlates with BMI
 s = svd(obsgenemat)
 crmeta = rank(s$v[,1])/ncol(obsgenemat)
+crmeta = 1-crmeta
 ord = order(crmeta)
 
 sraw = svd(crobsraw)
@@ -268,6 +269,7 @@ for(i in 1:length(data)) {
     tmp = get(paste('std',data[i],sep=''))
     m = get(gsub('mat','meta',data[i]))
     r = rank(m)/ncol(tmp)
+    r = 1-r
     o = order(r)
 
     heatmap.2(tmp[,o], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(r))[rank(r)][o], Colv=F, Rowv=T,main = data[i])
