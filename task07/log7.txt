@@ -1,0 +1,24 @@
+===============================================================================
+
+14 December 2015
+
+-------------------------------------------------------------------------------
+
+Need to re-do the data analysis again, using tidyr to make the matrix.
+    - do it on server (not enough memory on desktop...)
+
+===============================================================================
+
+15 December 2015
+
+-------------------------------------------------------------------------------
+
+Read all the cancer raw data (.tsv files) into R
+
+Need to use tidyr to  make it into a matrix.
+    - Need submitted_sample_id, gene_id, and raw_read_count columns
+    - change memory limit (ulimit -s 20480)
+
+There are 20502 unique genes per sample
+
+Made matrix for each cancer type
