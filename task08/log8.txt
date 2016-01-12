@@ -1,0 +1,9 @@
+===============================================================================
+
+13 January 2016
+
+-------------------------------------------------------------------------------
+
+Starting the analysis of the cancer data (processed with tidyr)
+
+Imported the cancer data and bmi data into R
