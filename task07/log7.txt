@@ -22,3 +22,28 @@ Need to use tidyr to  make it into a matrix.
 There are 20502 unique genes per sample
 
 Made matrix for each cancer type
+
+
+===============================================================================
+
+12 January 2015
+
+-------------------------------------------------------------------------------
+
+Back into the lab
+
+All of the matrices created have the gene names as their first column, not as rownames
+    - Change the rownames to the first column
+
+Need to delete the '?' row (first row of the matrix)
+
+===============================================================================
+
+13 January 2015
+
+-------------------------------------------------------------------------------
+
+Rsynced the data from the server onto my computer
+
+Start analyzing the data using the codes from task06 as base
+
