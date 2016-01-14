@@ -1,9 +1,39 @@
-===============================================================================
+======================================================================
 
 13 January 2016
 
--------------------------------------------------------------------------------
+----------------------------------------------------------------------
 
 Starting the analysis of the cancer data (processed with tidyr)
 
 Imported the cancer data and bmi data into R
+
+======================================================================
+
+14 January 2016
+
+----------------------------------------------------------------------
+
+Used icgc_to_tcga function from task 4 to match the sample id in the
+bmi data with the cancer data
+    - The cancer data have sample ids as their column, so you need to
+        change it into rownames first before using the icgc_to_tcga
+        function.
+
+Need to identify which samples have bmi data
+
+There are duplicate samples in the cancer data
+    - need to identify them and merge them (use WGCNA)
+
+collapseRows function from WGCNA worked on all cancer types, but 
+produced warnings
+    - "row names of input data and probes not identical ..... check 
+        results carefully"
+
+
+
+
+
+
+
+
