@@ -83,8 +83,62 @@ for (i in 1:length(files)) {
     }
 
     assign(files[i],t)
-
 }
+
+#need to know the obesity genes to make metagene (import Creighton et al obesity gene)
+crobsgene = readLines('../task05/obsGenes.txt') #import Creighton obesity genes
+
+#convert it into gene symbols:
+crobsgene = mapIds(hgu133a.db, keys = crobsgene, column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+
+crobsgene = crobsgene[-(which(is.na(crobsgene)))] #remove any NAs
+crobsgene = unique(crobsgene) #include only unique genes.
+
+#some genes aren't int he cancer data, so remove these genes from the obesity-related genes:
+crobsgene = crobsgene[which(crobsgene %in% colnames(BLCAmat))]
+crobsgene = crobsgene[order(crobsgene)] #order the obesity related genes.
+
+#pull out the obesity related genes from each cancer type
+for (i in 1:length(files)) {
+    t = get(files[i])
+    t = t[,crobsgene]
+    txt = paste(files[i],'cr',sep='')
+    assign(txt,t)
+}
+
+#start SVD analysis
+files = paste(files,'cr',sep='')
+
+#Make a function to log and standardise cancer data
+# make sure that the cancer data have samples as their columns, not rows
+# if the matrix to be standardised doesn't have to be logged, then set the log variable to F
+standardise_data = function(x, log = T) {
+    if (log) {
+        x = log10(x + 1)
+    }
+    x = t(apply(x, 2, function(x) (x-mean(x))/sd(x)))
+    x[x < -3] = -3
+    x[x > 3] = 3
+    return(x)
+}
+
+#need to get metagene from Creighton et al data first:
+crfiles = readLines('../task05/creightonraw/files.txt')
+crfiles = paste('../task05/creightonraw/', crfiles, sep='')
+raw = ReadAffy(filenames = crfiles)
+raw = rma(raw)
+raw = exprs(raw)
+colnames(raw) = gsub('.CEL','', colnames(raw))
+crobsmat = raw
+
+#need to pull out the obesity related genes in Creighton data
+crgenes = rownames(crobsmat)
+crgenes = mapIds(hgu133a.db, keys = crgenes, column = 'SYMBOL', keytype = 'PROBEID', multiVals = 'first')
+rownames(crobsmat) = as.vector(crgenes)
+crobsmat = crobsmat[crobsgene,] #pull out the onesity related genes.
+
+
+
 
 
 

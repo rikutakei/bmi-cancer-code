@@ -30,6 +30,41 @@ produced warnings
     - "row names of input data and probes not identical ..... check 
         results carefully"
 
+======================================================================
+
+15 January 2016
+
+----------------------------------------------------------------------
+
+Got all the cancer type data - start the analysis
+
+First, I'll have to use the obesity genes from either the Creighton et
+al or Fuentes-mattei et al data
+    - start off with Creighton et al data, then F-M data.
+
+Crieghton obesity gene is not in gene symbol format, so convert it into
+gene symbols as in task 6
+    - 799 gene probes, 695 unique and non-NA genes.
+
+Need to pull out the Creighton obesity genes for each cancer type.
+    - some genes are not in the cancer data (have to remove these genes)
+    - 647 genes present in the cancer data
+
+Need to make the metagene from the Creighton data first (and also check
+again if it correlates with bmi)
+
+Do the analysis on all cancer types
+    - REMEMBER TO LOG AND STANDARDISE THE DATA!!
+
+Might as well make a function to do standardisation (and maybe SVD as
+well)
+
+
+
+
+
+
+
 
 
 
