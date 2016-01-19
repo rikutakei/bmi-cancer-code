@@ -110,7 +110,7 @@ for (i in 1:length(files)) {
 files = paste(files,'cr',sep='')
 
 #Make a function to log and standardise cancer data
-# make sure that the cancer data have samples as their columns, not rows
+# make sure that the cancer data have genes as their columns, not rows
 # if the matrix to be standardised doesn't have to be logged, then set the log variable to F
 standardise_data = function(x, log = T) {
     if (log) {
@@ -137,10 +137,91 @@ crgenes = mapIds(hgu133a.db, keys = crgenes, column = 'SYMBOL', keytype = 'PROBE
 rownames(crobsmat) = as.vector(crgenes)
 crobsmat = crobsmat[crobsgene,] #pull out the onesity related genes.
 
+#load clinical data for Creighton et al data.
+crclin = read.csv('../task05/GSE24185_clinical.csv')
 
+#standardise Creighton et al data without logging (already taken care by RMA)
+crobsmat = t(crobsmat) #make sure that the columns are the genes
+crobsmat = standardise_data(crobsmat, log = F)
 
+#function that returns the metagene from a matrix
+#make sure the samples are columns
+make_meta_gene = function(x) {
+    s = svd(x)
+    meta = rank(s$v[,1])/ncol(x)
+    meta = 1-meta
+    return(meta)
+}
 
+crmeta = make_meta_gene(crobsmat)
+ord = order(crmeta) #order the metagene so it looks better in heatmaps.
 
+#Make a heatmap using the data (x), metagene (meta)
+make_heatmap = function(x, meta) {
+    ord = order(meta)
+    heatmap.2(x[,ord], trace = 'none', scale = 'none', col = 'bluered', ColSideColors = bluered(length(meta))[rank(meta)][ord], Colv=F, Rowv=T)
+}
+
+make_heatmap(crobsmat, crmeta)
+
+#make transformation matrix
+s = svd(crobsmat)
+crtransmat = diag(1/s$d) %*% t(s$u)
+
+#identify which samples are obese/overweight/normal weight
+for (i in 1:length(bmifiles)) {
+    tmp = get(bmifiles[i])
+    tmp = as.data.frame(tmp)
+    x = vector()
+    for(j in 1:nrow(tmp)) {
+        if(tmp[j,3] >= 30) {
+            x = append(x,'obese')
+        } else if(tmp[j,3] <= 25) {
+            x = append(x,'normal')
+        } else {
+            x = append(x,'overweight')
+        }
+    }
+    tmp = cbind(tmp,x)
+    colnames(tmp)[4] = 'bmi_status'
+    assign(bmifiles[i],tmp)
+}
+
+#pull out samples that are in both cancer and bmi data
+files = gsub('cr','',files)
+
+for (i in 1:length(files)) {
+    x = rownames(get(paste(files[i],'cr',sep=''))) ##rownames of obsmat
+    y = rownames(get(gsub('mat','bmi',files[i]))) ##rownames of bmi
+    if(length(x) > length(y)) {
+        ind = which(x %in% y)
+        assign(paste(files[i],'obs',sep=''), get(paste(files[i],'cr',sep=''))[ind,])
+    } else {
+        ind = which(y %in% x)
+        assign(gsub('mat','bmi',files[i]), get(gsub('mat','bmi',files[i]))[ind,])
+    }
+}
+
+#standardise cancer data
+files = paste(files,'cr',sep='')
+
+for (i in 1:length(files)) {
+    t = get(files[i])
+    t = standardise_data(t)
+    txt = paste(files[i],'std',sep='')
+    assign(txt,t)
+}
+
+#get metagenes for all the cancer types.
+files = paste(files, 'std',sep='')
+metafiles = gsub('matcrstd','meta',files)
+
+for (i in 1:length(files)) {
+    txt = metafiles[i]
+    t = crtransmat %*% get(files[i]) #transform the matrix
+    t = t[,1] #get metagene
+    assign(txt,t) #save it in variable
+}
 
 
 
