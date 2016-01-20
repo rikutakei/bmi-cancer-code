@@ -59,11 +59,6 @@ Do the analysis on all cancer types
 Might as well make a function to do standardisation (and maybe SVD as
 well)
 
-======================================================================
-
-19 January 2016
-
-----------------------------------------------------------------------
 
 Continuing on with the Creighton et al data
 
@@ -77,8 +72,33 @@ other cancer data.
 
 (lines 140 to 224)
 
+======================================================================
 
+20 January 2016
 
+----------------------------------------------------------------------
+
+Carrying on with analyzing cancer data.
+
+Forgot to transpose the transformed matrix
+    - added t() function in the make_meta_gene function
+
+Forgot to make make_plot function for associating bmi data with the
+expression data
+    - May need to use 1-metagene as the metagene input
+    - ouput will be stored in a crcancer.pdf file
+
+SLC17A6 gene produced NaN in the READ cancer data after standardisation
+and affected the tranformation
+    - remove this gene from the obesity related gene list and re-do the
+        analysis
+
+The heatmaps showed similar results as last analysis
+    - gene expression correlates with the BMI status
+
+However, the clinical variables did not match the metagene
+
+(lines 226 to )
 
 
 

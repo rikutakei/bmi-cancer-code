@@ -94,9 +94,10 @@ crobsgene = mapIds(hgu133a.db, keys = crobsgene, column = 'SYMBOL', keytype = "P
 crobsgene = crobsgene[-(which(is.na(crobsgene)))] #remove any NAs
 crobsgene = unique(crobsgene) #include only unique genes.
 
-#some genes aren't int he cancer data, so remove these genes from the obesity-related genes:
+#some genes aren't in the cancer data, so remove these genes from the obesity-related genes:
 crobsgene = crobsgene[which(crobsgene %in% colnames(BLCAmat))]
 crobsgene = crobsgene[order(crobsgene)] #order the obesity related genes.
+crobsgene = crobsgene[-(which(crobsgene =='SLC17A6'))] #This gene produced NaN in READ cancer data during standardisation - remove it from the gene list
 
 #pull out the obesity related genes from each cancer type
 for (i in 1:length(files)) {
@@ -157,12 +158,21 @@ crmeta = make_meta_gene(crobsmat)
 ord = order(crmeta) #order the metagene so it looks better in heatmaps.
 
 #Make a heatmap using the data (x), metagene (meta)
-make_heatmap = function(x, meta) {
+make_heatmap = function(x, meta, title = '') {
     ord = order(meta)
-    heatmap.2(x[,ord], trace = 'none', scale = 'none', col = 'bluered', ColSideColors = bluered(length(meta))[rank(meta)][ord], Colv=F, Rowv=T)
+    heatmap.2(x[,ord], trace = 'none', scale = 'none', col = 'bluered', ColSideColors = bluered(length(meta))[rank(meta)][ord], Colv=F, Rowv=T, main=title)
+}
+
+#Make box plot and dot plot with the clinical data
+# if the clinical variable name is not bmi_status (e.g. Creighton has bmiStatus), change it to fit the function
+#name variable is used for the title of the plots
+make_plots = function(meta, clin, name = '', variable= 'bmi_status') {
+    boxplot(meta~clin[[variable]], main = paste(name, 'metagene vs. BMI status'))
+    plot(clin$bmi, meta, pch = 20, main = paste(name, 'metagene vs. BMI value'))
 }
 
 make_heatmap(crobsmat, crmeta)
+make_plots(1-crmeta, crclin, name='Creighton', variable = 'bmiStatus')
 
 #make transformation matrix
 s = svd(crobsmat)
@@ -218,10 +228,44 @@ metafiles = gsub('matcrstd','meta',files)
 
 for (i in 1:length(files)) {
     txt = metafiles[i]
-    t = crtransmat %*% get(files[i]) #transform the matrix
+    t = t(crtransmat %*% get(files[i])) #transform the matrix
     t = t[,1] #get metagene
-    assign(txt,t) #save it in variable
+    assign(txt,t) #save it
 }
+
+#make heatmaps and plots for all the cancer types:
+pdf('crcancer.pdf')
+for (i in 1:length(files)) {
+    dat = get(files[i])
+    meta = get(metafiles[i])
+    bmi = get(bmifiles[i])
+    txt = gsub('meta', ' (Creighton transformed)', metafiles[i])
+    make_heatmap(dat, meta, title = txt)
+    make_plots(meta, bmi, name = gsub('meta','', metafiles[i]))
+}
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
