@@ -245,6 +245,60 @@ for (i in 1:length(files)) {
 }
 dev.off()
 
+######################################################################
+# Analysis using Fuentes-Mattei et al data
+######################################################################
+
+## Read in Fuentes-Mattei data:
+fmfiles = readLines('../task05/fmraw/files.txt')
+fmfiles = paste('../task05/fmraw/',fmfiles,sep='')
+fmraw = ReadAffy(filenames = fmfiles)
+fmraw = rma(fmraw) ## RMA normalise the data
+fmraw = exprs(fmraw) ## change the format into matrix
+
+fmobsgene = read.csv('../task05/supTab3-fixed.csv') ## list of probe IDs associated with obesity
+fmprobe = fmobsgene$Probe
+fmobsmat = fmraw[fmprobe,] #Pull out the obesity related gene probes
+
+#there are duplicates, so collapse it:
+collapse = collapseRows(fmobsmat, rowGroup = as.vector(fmobsgene$Gene.Symbol), rowID = rownames(fmobsmat))
+fmobsmat = as.matrix(collapse$datETcollapsed) #111 genes with 278 samples
+fmobsgene = rownames(fmobsmat)
+fmobsgene = fmobsgene[which(fmobsgene %in% colnames(BLCAmat))] #107 genes are in both FM data and the cancer data
+fmobsmat = fmobsmat[fmobsgene,] #there's a " " gene - remove it
+
+#standardise data:
+fmobsmat = t(fmobsmat) #so the genes are columns
+fmobsmat = standardise_data(fmobsmat, log = F)
+fmmeta = make_meta_gene(fmobsmat)
+make_heatmap(fmobsmat,fmmeta,title = 'Fuentes-Mattei') #make heatmap
+
+fmtransmat = diag(1/svd(fmobsmat)$d) %*% t(svd(fmobsmat)$u)
+
+#pre-process cancer data
+files = gsub('crstd', '', files)
+for (i in 1:length(files)) {
+    txt = paste(files[i], 'fm', sep='')
+    t = get(files[i])
+    t = t[,fmobsgene]
+    assign(txt, t)
+}
+
+#standardise and make metagene from the cancer data
+files = paste(files, 'fm',sep = '')
+for (i in 1:length(files)) {
+    #standardise
+    txt = paste(files[i],'std',sep='')
+    t = get(files[i])
+    t = standardise_data(t)
+    assign(txt, t)
+
+    #get metagene
+    txt = gsub('matfmstd','fmmeta',txt)
+    t = t(fmtransmat %*% t)
+    t = t[,1]
+    assign(txt,t)
+}
 
 
 
@@ -272,3 +326,17 @@ dev.off()
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
