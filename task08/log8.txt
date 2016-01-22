@@ -119,10 +119,20 @@ doesn't have clinical data
 Some genes are not included in the cancer data
     - 107 genes that are useful
 
-(lines 246 to 246)
+(lines 246 to 300)
 
 
+======================================================================
 
+22 January 2016
+
+----------------------------------------------------------------------
+
+Made all the heatmaps and plots for Fuentes-Mattei et al transformed
+cancer data.
+    - saved as 'fmcancer.pdf'
+
+(lines 300 to 315)
 
 
 

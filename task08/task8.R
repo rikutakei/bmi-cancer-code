@@ -300,6 +300,19 @@ for (i in 1:length(files)) {
     assign(txt,t)
 }
 
+#make heatmaps and plots
+files = paste(files,'std',sep='')
+metafiles = gsub('meta','fmmeta',metafiles)
+pdf('fmcancer.pdf')
+for (i in 1:length(files)) {
+    dat = get(files[i])
+    bmi = get(bmifiles[i])
+    meta = get(metafiles[i])
+    txt = gsub('fmmeta', ' (Fuentes-Mattei transformed)', metafiles[i])
+    make_heatmap(dat, meta, title= txt)
+    make_plots(meta,bmi,name = gsub('fmmeta','',metafiles[i]))
+}
+dev.off()
 
 
 
@@ -338,5 +351,3 @@ for (i in 1:length(files)) {
 
 
 
-
- 
