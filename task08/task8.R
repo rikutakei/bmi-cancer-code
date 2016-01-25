@@ -136,7 +136,7 @@ crobsmat = raw
 crgenes = rownames(crobsmat)
 crgenes = mapIds(hgu133a.db, keys = crgenes, column = 'SYMBOL', keytype = 'PROBEID', multiVals = 'first')
 rownames(crobsmat) = as.vector(crgenes)
-crobsmat = crobsmat[crobsgene,] #pull out the onesity related genes.
+crobsmat = crobsmat[crobsgene,] #pull out the obesity related genes.
 
 #load clinical data for Creighton et al data.
 crclin = read.csv('../task05/GSE24185_clinical.csv')

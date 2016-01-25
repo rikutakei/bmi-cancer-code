@@ -7,8 +7,34 @@
 Need to start on the differential gene expression analysis for the
 cancer types.
 
-(lines 300 to 315)
+Pseudocode/plan:
+    - do normal vs overweight and above
+    - do normal vs obese
+    - confirm Creighton et al obesity related gene probes
+    - do DEGs for all cancer types
+    - find commonly differentially expressed genes
+    - use these genes to find common pathways being dysregulated
+        (maybe next task...?)
 
+Start the analysis with Creighton et al data first, confirm the
+results, then move onto other cancer data.
+
+Some results from Creighton et al data:
+    - for P value < 0.05 (unadjusted):
+        - normal vs overweight/obese = 759 genes
+        - normal/overweight vs obese = 5278 genes
+    - for P value < 0.01 (unadjusted):
+        - normal vs overweight/obese = 104 genes
+        - normal/overweight vs obese = 1781 genes
+
+Above results were done using FDR control, and there weren't many
+DEGs when adjusted P-value was used.
+    - These numbers don't really correspond to the original
+        Creighton et al results from their paper...
+
+Use the cancer data produced from tidyr (i.e. data from task8)
+
+(from start to )
 
 
 
