@@ -132,6 +132,14 @@ Made all the heatmaps and plots for Fuentes-Mattei et al transformed
 cancer data.
     - saved as 'fmcancer.pdf'
 
+Again, the results looked similar to the previous results that used my
+function to process the data
+    - suggests that the obesity related genes cannot be used in other
+        cancer types...
+
+Need to start on the differential gene expression analysis for the
+cancer types.
+
 (lines 300 to 315)
 
 
