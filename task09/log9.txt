@@ -32,17 +32,66 @@ DEGs when adjusted P-value was used.
     - These numbers don't really correspond to the original
         Creighton et al results from their paper...
 
-Use the cancer data produced from tidyr (i.e. data from task8)
+Check if there are any overlaps in the obesity-related genes and
+the significant genes
 
-(from start to )
+(from start to line 95)
 
+======================================================================
 
+26 January 2016
 
+----------------------------------------------------------------------
 
+Need to process the data first
+    - load data and find which samples have BMI data
+    - log the data
+    - identify and group the samples into their BMI status
 
+There were NAs introduced after standardising the cancer data and has
+been removed
+    - note that the number of NAs introduced in each cancer type was
+        different, and therefore the number of genes in each cancer
+        type are different now
+            - may have to adjust the number of genes so that they
+                have the same number of genes...
 
+Made top tables for all the cancer types
 
+Realised that you need to use voom normalisation instead of just
+logging and standardising.
 
+Made a function to pull out the significant genes
 
+Need to make a venn diagram to see if any overlaps
+    - venn diagram only supports 2~5...
 
+There were about 9000 DEGs that were common between all 8 cancer types,
+using p value of 0.05.
+    - about 3300 gene when p value < 0.01
 
+(from line 95 to line 260)
+
+======================================================================
+
+27 January 2016
+
+----------------------------------------------------------------------
+
+Noticed that the 9000 genes common weren't actually common
+    - they were just total unique genes from all the cancer types,
+        rather than common genes.
+
+Need to re-do the common genes thing
+
+Table the genes twice to find how many genes turned up in however many
+cancer types.
+
+Talked to Mik:
+    - Need to randomly split the samples into two and carry out the DEG
+        analysis, then compare this with the results from the obesity
+        related samples split (task 10)
+    - group obese samples from all the cancer types and use obesity
+        related genes to do class prediction (task 11?)
+
+(from line 260 to end)
