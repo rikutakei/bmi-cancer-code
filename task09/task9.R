@@ -275,7 +275,11 @@ ovgenes = unlist(ovlist)
 names(t) = NULL
 ovgenes = names(which(table(ovgenes) >= 3))
 
-
+#save files for next task:
+for (i in 1:length(files)) {
+    dput(get(files[i]), paste(files[i],'t9.txt',sep=''))
+    dput(get(bmifiles[i]), paste(bmifiles[i],'t9.txt',sep=''))
+}
 
 
 

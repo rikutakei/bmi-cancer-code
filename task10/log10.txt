@@ -1,0 +1,85 @@
+======================================================================
+
+28 January 2016
+
+----------------------------------------------------------------------
+
+Need to repeat the DEG analysis multiple times (maybe 100?) with
+randomly split groups, not split based on BMI
+
+Pseudocode:
+    - split groups into two (1:1 or 1:2 ratio)
+        - whichever is closer to the normal/overweight vs obese split
+    - do DEG analysis, using group 1 vs group 2 as the design matrix
+        - do this for all cancer types
+    - tabularise these and save the result
+        - maybe save the genes that were common in 3 or more cancer
+            types as well...?
+    - repeat this for n times (maybe 100)
+    - compare the saved results with obesity-split results
+
+The relative sample size per group of cancer types:
+
+              normal overweight  obese
+        BLCA    103         97     61
+        CESC     85         62     77
+        COAD     75         80     71
+        KIRP     26         53     45
+        LIHC    140         75     49
+        READ     22         36     15
+        SKCM     72         73     73
+        UCEC     90        106    286
+
+Either keep the ratio of the samples the same, or to keep the absolute
+number of samples used the same  for each run
+    - probably do the latter
+
+Probably a good idea to set the seed before randomly choosing the
+the samples for grouping
+
+Use the number of samples in the 'samples' matrix as a guide
+
+Psuedocode for grouping:
+    - generate n random numbers between 1 and x, where n = number
+        of ob samples and x = total number of samples in that
+        cancer type
+    - use these numbers as the row coordinates for picking the
+        samples and making  the model matrix
+
+Made a function to do the test, but not sure if this was necessary
+
+(from start to line 115)
+
+======================================================================
+
+29 January 2016
+
+----------------------------------------------------------------------
+
+The function to do the test ran longer than expected (about 2 hours)
+
+Results:
+
+Randomly split sample testing (n = 100)
+-------------------------------------------------------------------------
+No. of cancer types overlapped |   1  |  2  | 3  | 4 |   5  | 6 | 7 | 8 |
+No. of genes (mean)            | 5012 | 870 | 89 | 6 | 0.22 | 0 | 0 | 0 |
+
+Normal/Overweight vs  obese sample split
+-------------------------------------------------------------------------
+No. of cancer types overlapped | 1    | 2    | 3   | 4  | 5 | 6 | 7 | 8 |
+No. of genes (mean)            | 6865 | 1907 | 289 | 26 | 1 | 0 | 0 | 0 |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
