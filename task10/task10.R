@@ -114,7 +114,37 @@ sample_test = function(files = files, samples = samples, mat, n = 100, p = 0.05)
     return(mat)
 }
 
+#attempt at optimising the above function
+sample_test2 = function(files = files, samples = samples, mat, n = 100, p = 0.05) {
+    originalList = as.list(gsub('mat','',files))
+    names(originalList) = gsub('mat','',files)
+    for (i in 1:length(files)) {
+        originalList[[i]] = get(files[i])
+    }
 
+    for (j in 1:n) {
+        l = originalList
+        l = lapply(seq_along(l), function(x) {
+                group = sample(1:sum(samples[x,]), samples[x,3], replace=F) #pick samples randomly
+                group = c(1:sum(samples[x,])) %in% group #make a vector out of the randomly chosen samples
+                design = model.matrix(~group) #make model matrix using the randomly chosen samples.
+                dat = normVoom(l[[x]], design) #normalise the data
+                top = make_tt(dat, design) #make top table from the data
+                l[[x]] = rownames(pull_deg(top, y = p))
+            })
+
+        t = unlist(l)
+        t = table(table(t))
+        v = c(rep(0,8))
+
+        for (i in 1:length(t)) {
+            v[i] = t[i]
+        }
+
+        mat[j,] = v
+    }
+    return(mat)
+}
 
 
 

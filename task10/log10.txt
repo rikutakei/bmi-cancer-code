@@ -66,18 +66,27 @@ No. of cancer types overlapped |   1  |  2  | 3  | 4 |   5  | 6 | 7 | 8 |
 No. of genes (mean)            | 5012 | 870 | 89 | 6 | 0.22 | 0 | 0 | 0 |
 
 Normal/Overweight vs  obese sample split
--------------------------------------------------------------------------
+------------------------------------------------------------------------
 No. of cancer types overlapped | 1    | 2    | 3   | 4  | 5 | 6 | 7 | 8 |
 No. of genes (mean)            | 6865 | 1907 | 289 | 26 | 1 | 0 | 0 | 0 |
 
+Now that I've got the result, I need to figure out whether the 6865
+genes in the original result was by chance, when compared with the
+randomly split samples
+    - i.e. I need to find the 90th or 95th percentile of the number
+        of genes (then we know whether the 6865 genes were by chance,
+        or it really was significant)
 
+I need to carry out the test again, but with 1000 samples and figure out
+what the significant values for the genes are
+    - since the run of 100 tests took about 1 to 2 hours, gonna try
+        parallelise the task using parallel R in terminal
+            - all codes are backed up on gitHub
 
-
-
-
-
-
-
+Before I do this, try optimising the function
+    - use lapply instead of for loop
+    - manage to do this by using seq_along, but not sure if it's any
+        faster...
 
 
 
