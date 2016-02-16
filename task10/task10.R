@@ -124,7 +124,7 @@ sample_test2 = function(files = files, samples = samples, mat, n = 100, p = 0.05
 
     for (j in 1:n) {
         l = originalList
-        l = lapply(seq_along(l), function(x) {
+        l = mclapply(seq_along(l), function(x) {
                 group = sample(1:sum(samples[x,]), samples[x,3], replace=F) #pick samples randomly
                 group = c(1:sum(samples[x,])) %in% group #make a vector out of the randomly chosen samples
                 design = model.matrix(~group) #make model matrix using the randomly chosen samples.

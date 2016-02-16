@@ -84,7 +84,7 @@ what the significant values for the genes are
             - all codes are backed up on gitHub
 
 Before I do this, try optimising the function
-    - use lapply instead of for loop
+    - use mclapply instead of for loop
     - manage to do this by using seq_along, but not sure if it's any
         faster...
 
