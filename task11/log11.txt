@@ -1,2 +1,73 @@
-starting task 11
+======================================================================
+
+17 February 2016
+
+----------------------------------------------------------------------
+
+Starting task 11
+
+Results from task 10 showed that my original results were significant
+compared to the randomly sampled data set/group.
+
+However, they probably have a lot of false positives, and will be quite
+hard to find which genes are actually significant.
+    - have a look at the genes that didn't come up in the randomly
+        sampled data
+    - do pathway enrichment analysis with the genes.
+
+What to do:
+    1) Find genes that are present in the real data, but not in the
+        randomly sampled data
+            - i.e. DEGs that are not expressed by chance (since all
+             of the genes from randomly sampled data are by chance)
+    2) Repeat the DEG analysis, but with pathway enrichment analysis
+        and look for the pathways that are significant in the real
+        data.
+            - Do pathway enrichment analysis for every cancer and
+                find the common pathways across multiple cancer
+                types (then compare it with the real data).
+    3) Pull out the t-test scores from the differential expression
+        analysis for all the genes that were differentially expressed
+        in the cancer types, then create a heatmap to see what t-values
+        each cancer types were getting.
+
+1 and 2 are pretty much the same thing - probably do it in the same task.
+3 looks easy enough to wedge it into this task as well.
+
+======================================================================
+
+18 February 2016
+
+----------------------------------------------------------------------
+
+Started working on the pathway analysis
+    - using reactome, gene ontology, KEGG, and org.Hs.eg.db databases.
+
+
+======================================================================
+
+19 February 2016
+
+----------------------------------------------------------------------
+
+Found a bug in the code from Tom in the GO database bit (line 38 in
+Tom's code)
+    - The gene symbols were matching different GOID and/or pathway
+
+What Tom's code allows you to do:
+    1) ****.list variables store the gene symbols which contains the
+        ID for the pathways.
+    2) The ID can then be used to search for the pathway(s) by
+        referencing the ID with the path* variables.
+
+Not quite sure of how to find significantly enriched pathways...
+
+
+
+
+
+
+
+
+
 
