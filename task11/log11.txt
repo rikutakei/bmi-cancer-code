@@ -62,10 +62,13 @@ What Tom's code allows you to do:
 
 Not quite sure of how to find significantly enriched pathways...
 
+Only 6750 pathways in the reactome database...??
 
+======================================================================
 
+22 February 2016
 
-
+----------------------------------------------------------------------
 
 
 

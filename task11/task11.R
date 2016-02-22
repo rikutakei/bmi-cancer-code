@@ -57,30 +57,36 @@ path<-as.list(KEGGPATHID2NAME)
 ##Import GO pathways:
 GO.list<-as.list(org.Hs.egGO)
 #... and reformat so matching KEGG.list
-GO.list2<-list()
-for(i in 1:length(GO.list))  GO.list2[[i]]<-names(GO.list[[i]])
-rm(GO.list)
+tmp = list()
+for(i in 1:length(GO.list))  tmp[[i]]<-names(GO.list[[i]])
+GO.list = tmp
 #name GO pathway lists with corresponding gene symbols
-names(GO.list2)<-SYMBOL.list[names(GO.list2)]
+names(GO.list)<-SYMBOL.list[names(GO.list)]
 #mapping GO IDs to human read pathway name
 path2<-as.list(GOTERM)
 #... and reformat so matching KEGG.list
-pathx<-list()
-for(i in 1:length(path2)) pathx[[i]]<-path2[[i]]@Term
-names(pathx)<-names(path2)
-path2<-pathx
-rm(pathx)
+tmp = list()
+for(i in 1:length(path2)) tmp[[i]]<-path2[[i]]@Term
+names(tmp) = names(path2)
+path2 = tmp
 
 #Import Human Reactome pathways
 reactome.list<-as.list(reactomeEXTID2PATHID)
-#name reactome pathway lists with corresponding gene symbols
-reactome.list<-reactome.list[match(names(SYMBOL.list), names(reactome.list))]
-names(reactome.list)<-unlist(SYMBOL.list)
+#Sort the names in the list:
+reactome.list = reactome.list[order(as.numeric(names(reactome.list)))]
+#get paths that have gene symbols:
+reactome.list = reactome.list[which(names(reactome.list) %in% names(SYMBOL.list))]
+#rename the entrez gene ID into gene symbol
+names(reactome.list) = unlist(SYMBOL.list[names(reactome.list)])
 #mapping readtome path IDs to human read pathway name
 path3<-as.list(reactomePATHID2NAME)
-#extract human pathways
-path3<-lapply(path3[grep("Homo sapiens", path4)], function(x) strsplit(x, split=": ")[[1]][2:length(strsplit(x, split=": ")[[1]])])
-path3<-lapply(path3, function(x) if(length(x)>1) paste0(x[1], ": ", x[2]) else x)
+#pull out all human-related pathways
+path3 = path3[grep('Homo sapiens', path3)]
+#cut out the 'Homo sapiens: ' bit so it's only the pathway names.
+path3 = lapply(path3, function(x) gsub('Homo sapiens: ', '', x))
+
+
+
 
 
 
