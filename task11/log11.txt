@@ -66,9 +66,38 @@ Only 6750 pathways in the reactome database...??
 
 ======================================================================
 
-22 February 2016
+24 February 2016
 
 ----------------------------------------------------------------------
+
+Need to find significant pathways from DEGs....
+    - found a few R packages - going to see what they're like
+        - topGO, GOstats, ReactomePA, KEGGprofile, PATHNet
+        - EnrichmentBrowser didn't load properly
+
+======================================================================
+
+25 February 2016
+
+----------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

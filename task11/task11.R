@@ -30,6 +30,16 @@ library(org.Hs.eg.db)
 library(KEGG.db)
 library(GO.db)
 library(reactome.db)
+
+#pathway analysis packages from bioconductor
+source('http://bioconductor.org/biocLite.R')
+biocLite(c('topGO','GOstats','ReactomePA','KEGGprofile','PathNet'))
+library(topGO)
+library(GOstats)
+library(ReactomePA)
+library(KEGGprofile)
+library(PathNet)
+
 ######################################################################
 
 ## R code from Tom:
@@ -85,11 +95,30 @@ path3 = path3[grep('Homo sapiens', path3)]
 #cut out the 'Homo sapiens: ' bit so it's only the pathway names.
 path3 = lapply(path3, function(x) gsub('Homo sapiens: ', '', x))
 
+######################################################################
 
+#some codes from task 10
 
+#load all the data:
+files = readLines('../task09/files.txt')
+files = paste('../task09/',files,sep='')
+bmifiles = gsub('mat','bmi',files)
 
+#create variables for cancer data matrix
+for (i in 1:length(files)) {
+    txt = gsub('t9.txt','',files[i])
+    txt = gsub('../task09/','',txt)
+    assign(txt, t(dget(files[i]))) #transpose the matrix so the columns are samples
+    files[i] = txt #rename files to its variable names
 
+    txt = gsub('t9.txt','',bmifiles[i])
+    txt = gsub('../task09/','',txt)
+    assign(txt, dget(bmifiles[i]))
+    bmifiles[i] = txt #rename files to its variable names
+}
 
+#source the file to get all the functions from task10.R
+source('~/Documents/codes/bmi-cancer-code/task10/task10.R')
 
 
 
