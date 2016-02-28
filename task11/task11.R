@@ -33,12 +33,13 @@ library(reactome.db)
 
 #pathway analysis packages from bioconductor
 source('http://bioconductor.org/biocLite.R')
-biocLite(c('topGO','GOstats','ReactomePA','KEGGprofile','PathNet'))
+biocLite(c('topGO','GOstats','ReactomePA','KEGGprofile','PathNet','safe'))
 library(topGO)
 library(GOstats)
 library(ReactomePA)
 library(KEGGprofile)
 library(PathNet)
+library(safe)
 
 ######################################################################
 
@@ -62,7 +63,7 @@ SYMBOL.list<-as.list(org.Hs.egSYMBOL)
 KEGG.list<-as.list(org.Hs.egPATH)
 #name KEGG pathway lists with corresponding gene symbols names(KEGG.list)<-unlist(SYMBOL.list)
 #mapping KEGG path IDs to human read pathway name
-path<-as.list(KEGGPATHID2NAME)
+keggpath<-as.list(KEGGPATHID2NAME)
 
 ##Import GO pathways:
 GO.list<-as.list(org.Hs.egGO)
@@ -73,12 +74,12 @@ GO.list = tmp
 #name GO pathway lists with corresponding gene symbols
 names(GO.list)<-SYMBOL.list[names(GO.list)]
 #mapping GO IDs to human read pathway name
-path2<-as.list(GOTERM)
+gopath<-as.list(GOTERM)
 #... and reformat so matching KEGG.list
 tmp = list()
-for(i in 1:length(path2)) tmp[[i]]<-path2[[i]]@Term
-names(tmp) = names(path2)
-path2 = tmp
+for(i in 1:length(gopath)) tmp[[i]]<-gopath[[i]]@Term
+names(tmp) = names(gopath)
+gopath = tmp
 
 #Import Human Reactome pathways
 reactome.list<-as.list(reactomeEXTID2PATHID)
@@ -89,11 +90,11 @@ reactome.list = reactome.list[which(names(reactome.list) %in% names(SYMBOL.list)
 #rename the entrez gene ID into gene symbol
 names(reactome.list) = unlist(SYMBOL.list[names(reactome.list)])
 #mapping readtome path IDs to human read pathway name
-path3<-as.list(reactomePATHID2NAME)
+reactomepath<-as.list(reactomePATHID2NAME)
 #pull out all human-related pathways
-path3 = path3[grep('Homo sapiens', path3)]
+reactomepath= path3[grep('Homo sapiens',reactomepath)]
 #cut out the 'Homo sapiens: ' bit so it's only the pathway names.
-path3 = lapply(path3, function(x) gsub('Homo sapiens: ', '', x))
+reactomepath= lapply(reactomepath, function(x) gsub('Homo sapiens: ', '', x))
 
 ######################################################################
 
@@ -117,12 +118,19 @@ for (i in 1:length(files)) {
     bmifiles[i] = txt #rename files to its variable names
 }
 
+#make a matrix of the sample sizes of each cancer type
+samples = matrix(nrow = 8, ncol = 3)
+colnames(samples) = unique(BLCAbmi[,4])[c(1,3,2)]
+rownames(samples) = gsub('mat','',files)
+for (i in 1: length(files)) {
+    samples[i,] = as.vector(table(get(bmifiles[i])[,4]))[c(1,3,2)]
+}
+
+
 #source the file to get all the functions from task10.R
-source('~/Documents/codes/bmi-cancer-code/task10/task10.R')
+source('~/Documents/codes/bmi-cancer-code/task10/func10.R')
 
-
-
-
+set.seed(1) ##set the seed for reproducibility
 
 
 
