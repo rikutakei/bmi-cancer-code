@@ -61,15 +61,27 @@ SYMBOL.list<-as.list(org.Hs.egSYMBOL)
 
 ##Import KEGG pathways:
 KEGG.list<-as.list(org.Hs.egPATH)
-#name KEGG pathway lists with corresponding gene symbols names(KEGG.list)<-unlist(SYMBOL.list)
+#name KEGG pathway lists with corresponding gene symbols
+names(KEGG.list)<-unlist(SYMBOL.list)
 #mapping KEGG path IDs to human read pathway name
 keggpath<-as.list(KEGGPATHID2NAME)
 
 ##Import GO pathways:
 GO.list<-as.list(org.Hs.egGO)
 #... and reformat so matching KEGG.list
-tmp = list()
-for(i in 1:length(GO.list))  tmp[[i]]<-names(GO.list[[i]])
+tmp = GO.list
+
+## the for-loop below gives you duplicate values -> DON'T USE IT (for now at least)
+#for(i in 1:length(GO.list))  tmp[[i]]<-names(GO.list[[i]] ) ## pull out GOID from GO.list
+
+#Use this to pull out the GOID
+for (i in 1:length(tmp)) {
+    ind = names(tmp)[i]
+    if(class(tmp[[ind]]) == 'list') {
+        tmp[[ind]] = names(tmp[[ind]])
+    }
+}
+tmp = tmp[which(!is.na(tmp))]##filter out the NA values
 GO.list = tmp
 #name GO pathway lists with corresponding gene symbols
 names(GO.list)<-SYMBOL.list[names(GO.list)]
@@ -82,7 +94,7 @@ names(tmp) = names(gopath)
 gopath = tmp
 
 #Import Human Reactome pathways
-reactome.list<-as.list(reactomeEXTID2PATHID)
+reactome.list <-as.list(reactomeEXTID2PATHID)
 #Sort the names in the list:
 reactome.list = reactome.list[order(as.numeric(names(reactome.list)))]
 #get paths that have gene symbols:
@@ -90,11 +102,11 @@ reactome.list = reactome.list[which(names(reactome.list) %in% names(SYMBOL.list)
 #rename the entrez gene ID into gene symbol
 names(reactome.list) = unlist(SYMBOL.list[names(reactome.list)])
 #mapping readtome path IDs to human read pathway name
-reactomepath<-as.list(reactomePATHID2NAME)
+reactomepath <- as.list(reactomePATHID2NAME)
 #pull out all human-related pathways
-reactomepath= path3[grep('Homo sapiens',reactomepath)]
+reactomepath = reactomepath[grep('Homo sapiens',reactomepath)]
 #cut out the 'Homo sapiens: ' bit so it's only the pathway names.
-reactomepath= lapply(reactomepath, function(x) gsub('Homo sapiens: ', '', x))
+reactomepath = lapply(reactomepath, function(x) gsub('Homo sapiens: ', '', x))
 
 ######################################################################
 
@@ -132,6 +144,150 @@ source('~/Documents/codes/bmi-cancer-code/task10/func10.R')
 
 set.seed(1) ##set the seed for reproducibility
 
+#make a gene-by-pathway matrix to use it in the pathway enrichment analysis
+
+#first, make a function to pull out pathways from the database, using the genes in the cancer data
+#genename is the name of the gene (character), databasetype is one of "KEGG", "GO" or "reactome" (character)
+lookup = function(genename, databasetype) {
+    ## check which database you're looking up in
+    if (databasetype == "KEGG") {
+        genetoentrez = KEGG.list
+        entreztopath = keggpath
+    } else if (databasetype == "GO") {
+        genetoentrez = GO.list
+        entreztopath = gopath
+    } else {
+        genetoentrez = reactome.list
+        entreztopath = reactomepath
+    }
+
+    entrezID = 0
+    entrezID = genetoentrez[[genename]] #get entrezID from the gene name
+
+    #pull out the paths from the entrezID
+    if(is.null(entrezID)) {
+        return(entrezID)
+    } else if (length(entrezID) > 1) {
+        path = vector()
+        for (i in 1:length(entrezID)) {
+            path = c(path, entreztopath[[entrezID[i]]])
+        }
+    } else {
+        path = entreztopath[[entrezID]]
+    }
+
+    return(path)
+}
+
+#make a function to make a conditional vector describing which pathway(s) is present for a given gene
+#makeTFvector = function(path, allpath) {
+    #v = allpath %in% path
+    #return(v)
+#}
+
+
+#KEGG matrix
+pathnames = unique(unlist(keggpath)) #Get all the pathways in the keggpath list
+genenames = rownames(BLCAmat) #Get all the gene names in the cancer data
+tmp = matrix(nrow = length(genenames), ncol = length(pathnames)) #make an empty matrix to fill
+colnames(tmp) = pathnames
+rownames(tmp) = genenames
+
+for(i in 1:length(rownames(tmp))) {
+    v = colnames(tmp) %in% lookup(rownames(tmp)[i], "KEGG")
+    if(length(v) > 0) {
+        tmp[rownames(tmp)[i],] = v
+    }
+}
+
+#GO matrix
+
+
+#reactome matrix
+
+
+
+
+
+#Pathway enrichment analysis function
+#It should take in DEGs and pull out relevant data from a pre-made gene-by-pathway matrix.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sample_test2 = function(files = files, samples = samples, mat, n = 100, p = 0.05) {
+    originalList = as.list(gsub('mat','',files))
+    names(originalList) = gsub('mat','',files)
+    for (i in 1:length(files)) {
+        originalList[[i]] = get(files[i])
+    }
+
+    for (j in 1:n) {
+        l = originalList
+        l = mclapply(seq_along(l), function(x) { ##seq_along gives you the length of the list (i.e. the indices of the cancer subtypes in the list)
+            group = sample(1:sum(samples[x,]), samples[x,3], replace=F) #pick samples randomly
+            group = c(1:sum(samples[x,])) %in% group #make a vector out of the randomly chosen samples
+            design = model.matrix(~group) #make model matrix using the randomly chosen samples.
+            dat = normVoom(l[[x]], design) #normalise the data
+            top = make_tt(dat, design) #make top table from the data
+            l[[x]] = rownames(pull_deg(top, y = p))
+        })
+
+        t = unlist(l)
+        t = table(table(t))
+        v = c(rep(0,8))
+
+        for (i in 1:length(t)) {
+            v[i] = t[i]
+        }
+
+        mat[j,] = v
+    }
+    return(mat)
+}
 
 
 

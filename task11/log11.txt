@@ -53,6 +53,9 @@ Started working on the pathway analysis
 Found a bug in the code from Tom in the GO database bit (line 38 in
 Tom's code)
     - The gene symbols were matching different GOID and/or pathway
+    - when pulling out GOID from GO.list, some GOIDs had null value,
+        and therefore length of tmp becomes smaller than GO.list
+            - need to account for this 'loss' of samples.
 
 What Tom's code allows you to do:
     1) ****.list variables store the gene symbols which contains the
@@ -77,23 +80,44 @@ Need to find significant pathways from DEGs....
 
 ======================================================================
 
-25 February 2016
+29 February 2016
 
 ----------------------------------------------------------------------
 
+Need to figure out what the pathway enrichment analysis packages do
+( and the theory behind it ).
+    - probably need to write my own function on the way
 
+Some pseudocode:
+    - get list of DEGs
+    - within these DEGs, how many genes are involved in a specific
+        pathway?
+    - out of all the DEGs pulled out, is the number of genes associated
+        with the pathway statistically significant?
+            - yes = pathway enriched, no = not enriched
+    - repeat for all pathway
 
+I need to tweak the sample_test function so that it does the pathway
+enrichment analysis after each DEG analysis
+    - first make a function to do the pathway enrichment analysis
+    - need a pre-made matrix of gene-by-pathways for Fisher's test
+        - might have to make one for each database...?
 
+Thought I've debugged GO pathway from Tom's code, but seems like I
+haven't processed it properly...
+    - When pulling out GOID, some of them remains as list, instead of
+        vector of GOIDs
+            - i.e. list of list
+            - might have to re-do the for-loop until no list is included
 
+======================================================================
 
+1 March 2016
 
+----------------------------------------------------------------------
 
-
-
-
-
-
-
+Started making a gene-by-pathway matrix
+    - not sure using a for-loop is a good idea/elegant...?
 
 
 
