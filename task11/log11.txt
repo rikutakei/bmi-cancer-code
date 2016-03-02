@@ -119,6 +119,30 @@ haven't processed it properly...
 Started making a gene-by-pathway matrix
     - not sure using a for-loop is a good idea/elegant...?
 
+Decided to use for-loop instead of apply
+    - too hard to implement in apply function
+
+After making the for-loop, use ifelse function to make it into a 0/1
+matrix
+
+Need to do this for all pathway databases
+
+======================================================================
+
+2 March 2016
+
+----------------------------------------------------------------------
+
+KEGG and reactome pathways weren't as bad, but GO pathway database
+had way too many pathways for R to handle (like 40000 pathways)
+    - need to select for appropriate genes and pathways.
+
+
+
+
+
+
+
 
 
 

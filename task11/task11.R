@@ -200,10 +200,39 @@ for(i in 1:length(rownames(tmp))) {
     }
 }
 
-#GO matrix
+keggTFmat = ifelse(tmp == F, 0, 1)
 
+#GO matrix
+pathnames = unique(unlist(gopath)) #Get all the pathways in the gopath list
+tmp = matrix(nrow = length(genenames), ncol = length(pathnames)) #make an empty matrix to fill
+colnames(tmp) = pathnames
+rownames(tmp) = genenames
+
+for(i in 1:length(rownames(tmp))) {
+    v = colnames(tmp) %in% lookup(rownames(tmp)[i], "GO")
+    if(length(v) > 0) {
+        tmp[rownames(tmp)[i],] = v
+    }
+}
+
+goTFmat = ifelse(tmp == F, 0, 1)
 
 #reactome matrix
+
+pathnames = unique(unlist(reactomepath)) #Get all the pathways in the reactomepath list
+tmp = matrix(nrow = length(genenames), ncol = length(pathnames)) #make an empty matrix to fill
+colnames(tmp) = pathnames
+rownames(tmp) = genenames
+
+for(i in 1:length(rownames(tmp))) {
+    v = colnames(tmp) %in% lookup(rownames(tmp)[i], "reactome")
+    if(length(v) > 0) {
+        tmp[rownames(tmp)[i],] = v
+    }
+}
+
+reactomeTFmat = ifelse(tmp == F, 0, 1)
+
 
 
 
@@ -211,7 +240,6 @@ for(i in 1:length(rownames(tmp))) {
 
 #Pathway enrichment analysis function
 #It should take in DEGs and pull out relevant data from a pre-made gene-by-pathway matrix.
-
 
 
 
