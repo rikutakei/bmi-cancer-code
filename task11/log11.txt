@@ -137,12 +137,22 @@ KEGG and reactome pathways weren't as bad, but GO pathway database
 had way too many pathways for R to handle (like 40000 pathways)
     - need to select for appropriate genes and pathways.
 
+Save the files as txt
 
+======================================================================
 
+4 March 2016
 
+----------------------------------------------------------------------
 
+Got all the gene by pathway matrices
+    - starting the analysis now
 
-
+Haven't done all of the analyses, but noticed that some pathways have
+very few genes, and when these genes come up in the list of DEGs, it
+becomes significant...
+    - is this right?
+    - how does picking out 2 genes make the pathway "enriched"?
 
 
 

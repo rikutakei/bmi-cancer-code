@@ -202,21 +202,6 @@ for(i in 1:length(rownames(tmp))) {
 
 keggTFmat = ifelse(tmp == F, 0, 1)
 
-#GO matrix
-pathnames = unique(unlist(gopath)) #Get all the pathways in the gopath list
-tmp = matrix(nrow = length(genenames), ncol = length(pathnames)) #make an empty matrix to fill
-colnames(tmp) = pathnames
-rownames(tmp) = genenames
-
-for(i in 1:length(rownames(tmp))) {
-    v = colnames(tmp) %in% lookup(rownames(tmp)[i], "GO")
-    if(length(v) > 0) {
-        tmp[rownames(tmp)[i],] = v
-    }
-}
-
-goTFmat = ifelse(tmp == F, 0, 1)
-
 #reactome matrix
 
 pathnames = unique(unlist(reactomepath)) #Get all the pathways in the reactomepath list
@@ -233,89 +218,108 @@ for(i in 1:length(rownames(tmp))) {
 
 reactomeTFmat = ifelse(tmp == F, 0, 1)
 
+#GO matrix
+#for GO, there are too many pathways in total, so will have to make a matrix
+# using the pathways relevant to the genes in the cancer data.
+goentrez = GO.list[genenames] ## pull out pathways that are relevant
+goentrez = goentrez[which(!is.na(names(goentrez)))] #remove NAs
+genenames = names(goentrez) #update genenames
+goentrez = unique(unlist(goentrez)) #get unique entrezID
 
+pathnames = gopath[goentrez] ## pull out necessary paths using the entrezID
+pathnames = unlist(pathnames)
 
+tmp = matrix(nrow = length(genenames), ncol = length(pathnames))
+rownames(tmp) = genenames
+colnames(tmp) = pathnames
 
+for(i in 1:length(rownames(tmp))) {
+    v = colnames(tmp) %in% lookup(rownames(tmp)[i], "GO")
+    if(length(v) > 0) {
+        tmp[rownames(tmp)[i],] = v
+    }
+}
 
+goTFmat = ifelse(tmp == F, 0, 1)
+
+##remove pathways that have no genes involved (i.e. 0s)
+keggTFmat = keggTFmat[,!apply(keggTFmat==0, 2, all)]
+goTFmat = goTFmat[,!apply(goTFmat ==0, 2, all)]
+reactomeTFmat = reactomeTFmat[,!apply(reactomeTFmat==0, 2, all)]
+
+##save the files as txt
+dput(keggTFmat, file = 'kegggenebypath.txt')
+dput(reactomeTFmat, file = 'reactomegenebypath.txt')
+dput(goTFmat, file = 'gogenebypath.txt')
 
 #Pathway enrichment analysis function
 #It should take in DEGs and pull out relevant data from a pre-made gene-by-pathway matrix.
+# deg should be in the top table format (containing only significant genes)
+# db is the type of database you want to use in string format (i.e. 'KEGG', 'reactome', or 'GO')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-sample_test2 = function(files = files, samples = samples, mat, n = 100, p = 0.05) {
-    originalList = as.list(gsub('mat','',files))
-    names(originalList) = gsub('mat','',files)
-    for (i in 1:length(files)) {
-        originalList[[i]] = get(files[i])
+pathenrich = function(deg, db, gn = genenames) {
+    #check which database you're using
+    if (db == "KEGG") {
+        db = keggTFmat
+    } else if (db == "GO") {
+        db = goTFmat
+    } else {
+        db = reactomeTFmat
     }
 
-    for (j in 1:n) {
-        l = originalList
-        l = mclapply(seq_along(l), function(x) { ##seq_along gives you the length of the list (i.e. the indices of the cancer subtypes in the list)
-            group = sample(1:sum(samples[x,]), samples[x,3], replace=F) #pick samples randomly
-            group = c(1:sum(samples[x,])) %in% group #make a vector out of the randomly chosen samples
-            design = model.matrix(~group) #make model matrix using the randomly chosen samples.
-            dat = normVoom(l[[x]], design) #normalise the data
-            top = make_tt(dat, design) #make top table from the data
-            l[[x]] = rownames(pull_deg(top, y = p))
-        })
+    ##pull out relevant genes from the TF mat of the database
+    mat = db[which(rownames(db) %in% rownames(deg)),]
+    ##remove columns with 0s (i.e. pathways with no DEGs)
+    #mat = mat[,!apply(mat==0, 2, all)]
 
-        t = unlist(l)
-        t = table(table(t))
-        v = c(rep(0,8))
-
-        for (i in 1:length(t)) {
-            v[i] = t[i]
+    # matrix to dump the p-values of the pathway enrichment
+    v = matrix(nrow = ncol(mat), ncol = 1, dimnames = list(colnames(mat),'p.value'))
+    x = gn %in% rownames(deg)
+    for (i in 1:ncol(mat)){
+        y = gn %in% rownames(mat)[mat[,i]==1]
+        if(length(table(y)) > 1 ) { ##do Fisher's test only if there is a '1' inthere
+            f = fisher.test(table(x,y))
+            v[i,1] = f$p.value
+        } else {
+            v[i,1] = NA
         }
+    }
 
-        mat[j,] = v
+    return(v)
+}
+
+#set genenames to all 20501 genes in the  cancer data
+genenames = rownames(BLCAmat)
+
+##This function does path enrichment analysis n times on a single cancer type
+# dat is the cancer data, bmi is the BMI data of the cancer, sample_dat is the sample distribution in original data (normal/overweight/obese), n is the number of analyses to be carried out.
+npathenrich = function(dat, sample_dat, n = 100, db = "KEGG"){
+    for(i in 1:n) {
+        #pick samples randomly
+        group = sample(seq(sum(sample_dat)),sample_dat[3], replace = F)
+        #make a vector out of the randomly chosen samples
+        group = seq(sum(sample_dat)) %in% group
+        #make model matrix using the randomly chosen samples.
+        design = model.matrix(~group)
+        #normalise the data
+        x = normVoom(dat, design)
+        #make top table from the data
+        tt = make_tt(x, design)
+        # pull out DEGs
+        deg = pull_deg(tt)
+
+        tmppath = pathenrich(deg, db, gn = genenames)
+
+        if(i == 1) {
+            mat = tmppath
+        } else if (i > 1){
+            mat = cbind(mat, tmppath)
+        }
     }
     return(mat)
 }
+
+
 
 
 
