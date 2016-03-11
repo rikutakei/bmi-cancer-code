@@ -154,6 +154,81 @@ becomes significant...
     - is this right?
     - how does picking out 2 genes make the pathway "enriched"?
 
+======================================================================
+
+7 March 2016
+
+----------------------------------------------------------------------
+
+Changed the pathenrich function slightly
+    - use the whole db variable instead of pulling out 'relevant'
+        genes and/or pathways
+
+Due to the size of the TFmatrices, KEGG is the fastest, then reactome,
+then GO database
+    - but GO has the most pathways, and therefore most detailed ()
+
+Need to do the path enrichment analysis on original ob vs lean/ov
+data to get the list of pathways we're looking for
+    - then do pathway enrichment on random groups for the same data
+        and look for the pathways that didn't show up in the random
+        samples
+
+
+======================================================================
+
+9 March 2016
+
+----------------------------------------------------------------------
+
+Added lapply for adding adjusted p-values, using FDR (Benjamini Hochberg)
+
+Changed the lapply into mcapply
+
+======================================================================
+
+11 March 2016
+
+----------------------------------------------------------------------
+
+mclapply version was taking forever (not sure why...)
+    - reverted it back to the lapply version (worked fine, and
+        somehow very fast)
+
+Ready to do the however many iterations of pathway enrichment analysis
+for each cancer type.
+
+Pseudocode for the iteration:
+    - for each list element (i.e. cancer), make a matrix of p-values
+        to get a pathway by p-value matrix
+            - each column of p-value is from a single pathway
+                enrichment analysis
+    - after this list of pathway by p-values are made, need to adjust
+        it via BH/FDR method
+    - need to assign 0 or 1 for signaificant or non-significant
+        pathways, then count them all up (i.e. table() it)
+
+Do a test run to see if it works
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

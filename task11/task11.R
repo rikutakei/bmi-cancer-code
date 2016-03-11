@@ -142,8 +142,6 @@ for (i in 1: length(files)) {
 #source the file to get all the functions from task10.R
 source('~/Documents/codes/bmi-cancer-code/task10/func10.R')
 
-set.seed(1) ##set the seed for reproducibility
-
 #make a gene-by-pathway matrix to use it in the pathway enrichment analysis
 
 #first, make a function to pull out pathways from the database, using the genes in the cancer data
@@ -268,15 +266,15 @@ pathenrich = function(deg, db, gn = genenames) {
     }
 
     ##pull out relevant genes from the TF mat of the database
-    mat = db[which(rownames(db) %in% rownames(deg)),]
+    #mat = db[which(rownames(db) %in% rownames(deg)),]
     ##remove columns with 0s (i.e. pathways with no DEGs)
     #mat = mat[,!apply(mat==0, 2, all)]
 
     # matrix to dump the p-values of the pathway enrichment
-    v = matrix(nrow = ncol(mat), ncol = 1, dimnames = list(colnames(mat),'p.value'))
+    v = matrix(nrow = ncol(db), ncol = 1, dimnames = list(colnames(db),'p.value'))
     x = gn %in% rownames(deg)
-    for (i in 1:ncol(mat)){
-        y = gn %in% rownames(mat)[mat[,i]==1]
+    for (i in 1:ncol(db)){
+        y = gn %in% rownames(db)[db[,i]==1]
         if(length(table(y)) > 1 ) { ##do Fisher's test only if there is a '1' inthere
             f = fisher.test(table(x,y))
             v[i,1] = f$p.value
@@ -292,8 +290,8 @@ pathenrich = function(deg, db, gn = genenames) {
 genenames = rownames(BLCAmat)
 
 ##This function does path enrichment analysis n times on a single cancer type
-# dat is the cancer data, bmi is the BMI data of the cancer, sample_dat is the sample distribution in original data (normal/overweight/obese), n is the number of analyses to be carried out.
-npathenrich = function(dat, sample_dat, n = 100, db = "KEGG"){
+# dat is the cancer data, sample_dat is the sample distribution in original data (normal/overweight/obese), gn is a vector containing all the genes in the cancer data (i.e. rownames(BLCAmat)), n is the number of analyses to be carried out.
+npathenrich = function(dat, sample_dat, gn = genenames, n = 100, db = "KEGG"){
     for(i in 1:n) {
         #pick samples randomly
         group = sample(seq(sum(sample_dat)),sample_dat[3], replace = F)
@@ -320,15 +318,47 @@ npathenrich = function(dat, sample_dat, n = 100, db = "KEGG"){
 }
 
 
+#############################################################################
+# start pathway enrichment analysis:
+#############################################################################
 
+#begin by doing the pathway enrichment analysis on the ob vs lean/ov on each
+# cancer type
 
+files = gsub('mat','bmi',files)
 
+originalpathlist = originalList
 
+## do pathway enrichment analysis on each cancer type
+originalpathlist = lapply(seq_along(originalpathlist), function(x) {
+                       group = get(files[x])[,4]
+                       group = ifelse(group == 'obese', 'obese', 'normal/overweight')
+                       model = model.matrix(~group)
+                       dat = originalpathlist[[x]]
+                       dat = normVoom(dat, model)
+                       tt = make_tt(dat, model)
+                       deg = pull_deg(tt)
+                       path = pathenrich(deg, db = "GO", gn = rownames(dat))
+})
 
+## adjust the p-values using FDR:
+originalpathlist = lapply(originalpathlist, function(x) {
+                        p.adj = p.adjust(x, method = 'BH', n = nrow(x))
+                        x = cbind(x, p.adj)
+})
 
+## ready to do the pathway enrichment analysis:
 
+set.seed(1) ##set the seed for reproducibility
 
+#make copy just in case
+ntestrun = originalList
 
+# repeat the test run, but with npathenrich function instead of pathenrich:
+ntestrun = lapply(seq_along(ntestrun ), function(x) {
+                          dat = ntestrun [[x]]
+                          path = npathenrich( dat, sample_dat = samples[x,] ,n = 10, db = "GO", gn = rownames(dat))
+})
 
 
 
