@@ -347,6 +347,14 @@ originalpathlist = lapply(originalpathlist, function(x) {
                         x = cbind(x, p.adj)
 })
 
+## pull out the names of enriched paths:
+enrpaths = lapply(originalpathlist, function(x) {
+                  ind = which(x[,2] <= 0.05)
+                  rownames(x)[ind]
+})
+
+names(enrpaths) = gsub('bmi', '', files)
+
 ## ready to do the pathway enrichment analysis:
 
 set.seed(1) ##set the seed for reproducibility
@@ -360,7 +368,13 @@ ntestrun = lapply(seq_along(ntestrun ), function(x) {
                           path = npathenrich( dat, sample_dat = samples[x,] ,n = 10, db = "GO", gn = rownames(dat))
 })
 
+ntestrun2 = ntestrun
 
+ntestrun2 = lapply(ntestrun2 , function(x) {
+                   tmp = apply(x, 2, function(y) p.adjust(y, method = 'BH', n = length(y)))
+                   colnames(tmp) = paste('adj.', colnames(tmp), sep = '')
+                   return(tmp)
+})
 
 
 
