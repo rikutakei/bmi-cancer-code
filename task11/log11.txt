@@ -210,10 +210,22 @@ Pseudocode for the iteration:
 
 Do a test run to see if it works
 
+======================================================================
 
+18 March 2016
 
+----------------------------------------------------------------------
 
+The iteration version is working fine
 
+I need to do pathway enrichment analysis using the gene-rank based
+method, instead of a hypergeometric based method
+    - hypergeometric method (Fishers?) does a statistical test using
+        the genes that are differentially expressed, or not
+    - better if we rank the genes so that we take into account of the
+        'almost' significant genes
+
+Currently looking into the camera(), roast(), geneSetTest() functions
 
 
 

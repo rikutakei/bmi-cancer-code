@@ -376,11 +376,14 @@ ntestrun2 = lapply(ntestrun2 , function(x) {
                    return(tmp)
 })
 
+## So, the iteration for the Fisher's test-based enrichment analysis is working
+## Now I'll have to look into a rank-based enrichment analysis
 
+###############################################################################
+# Rank-based enrichment analysis
+###############################################################################
 
-
-
-
+test = originalList[[1]]
 
 
 
