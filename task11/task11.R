@@ -383,21 +383,67 @@ ntestrun2 = lapply(ntestrun2 , function(x) {
 # Rank-based enrichment analysis
 ###############################################################################
 
+## test out the camera function on the BLCA dataset
 test = originalList[[1]]
 
+## Make a design matrix:
+group = BLCAbmi[,4]
+group = ifelse(group == 'obese', 'obese', 'normal/overweight')
+design = model.matrix(~group)
 
+## normalise the data with normVoom()
+test = normVoom(test, design)$E
 
+## need to make a list of indices (that describe what genes are in each pathway) for the camera function:
+goind = split(goTFmat, rep(1:ncol(goTFmat), each = nrow(goTFmat)))
+names(goind) = colnames(goTFmat)
 
+## lapply the list so that it contains the genenames involved in the pathway
+## This list will be used as the index in the camera function
+genenames = rownames(test)
+goind = lapply(goind, function(x) genenames[which(x == 1)])
 
+## use the camera function in limma package
+test = camera(test, goind, design)
 
+## use the roast function to see if it does any better:
+test2 = roast(test, goind, design)
 
+###############################################################################
+# try camera on all the cancer types
+###############################################################################
 
+files = gsub('mat', 'bmi', files)
 
+test = originalList
 
+# default starting index list for lapply
+goind = split(goTFmat, rep(1:ncol(goTFmat), each = nrow(goTFmat)))
+names(goind) = colnames(goTFmat)
 
+test = lapply(seq_along(test), function(x) {
+              # make model matrix from bmi info
+              group = get(files[x])
+              group = group[,4]
+              group = ifelse(group == 'obese', 'obese', 'normal/overweight')
+              design = model.matrix(~group)
 
+              # normalise RNA-seq data:
+              y = test[[x]]
+              print(dim(y))
+              print(count)
 
+              y = normVoom(y, design)$E
 
+              genenames = rownames(y)
+
+              # make index list for pathway genes:
+              ind = goind
+              ind = lapply(ind, function(z) genenames[which(z == 1)])
+
+              # pathway enrichment:
+              y = camera(y, goind, design)
+})
 
 
 

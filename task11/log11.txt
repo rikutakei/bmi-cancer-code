@@ -227,19 +227,17 @@ method, instead of a hypergeometric based method
 
 Currently looking into the camera(), roast(), geneSetTest() functions
 
+======================================================================
 
+31 March 2016
 
+----------------------------------------------------------------------
 
+Came back from break - carrying on with pathway enrichment analysis
 
-
-
-
-
-
-
-
-
-
+Looked at camera and roast functions (geneSetTest function had a note
+saying that camera was recommended over this function)
+    - camera gave better FDR values than roast (?)
 
 
 
