@@ -205,7 +205,7 @@ Pseudocode for the iteration:
                 enrichment analysis
     - after this list of pathway by p-values are made, need to adjust
         it via BH/FDR method
-    - need to assign 0 or 1 for signaificant or non-significant
+    - need to assign 0 or 1 for significant or non-significant
         pathways, then count them all up (i.e. table() it)
 
 Do a test run to see if it works
@@ -239,10 +239,14 @@ Looked at camera and roast functions (geneSetTest function had a note
 saying that camera was recommended over this function)
     - camera gave better FDR values than roast (?)
 
+======================================================================
 
+4 April 2016
 
+----------------------------------------------------------------------
 
+There were no significant pathways enriched in any of the cancer data.
 
-
-
+Go back to Creighton data and double check if the marker is actually
+BMI related, or some other factors involved.
 

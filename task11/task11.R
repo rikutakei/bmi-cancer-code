@@ -430,8 +430,8 @@ test = lapply(seq_along(test), function(x) {
 
               # normalise RNA-seq data:
               y = test[[x]]
-              print(dim(y))
-              print(count)
+              #print(dim(y))
+              #print(count)
 
               y = normVoom(y, design)$E
 
@@ -442,7 +442,7 @@ test = lapply(seq_along(test), function(x) {
               ind = lapply(ind, function(z) genenames[which(z == 1)])
 
               # pathway enrichment:
-              y = camera(y, goind, design)
+              y = camera(y, goind, design, contrast = 2)
 })
 
 
