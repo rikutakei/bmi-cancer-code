@@ -247,6 +247,13 @@ saying that camera was recommended over this function)
 
 There were no significant pathways enriched in any of the cancer data.
 
+Re-run the analysis with all the samples on the same scale
+    - combine all the samples then normalise the whole data
+
+It still didn't find any significant pathways.
+
 Go back to Creighton data and double check if the marker is actually
 BMI related, or some other factors involved.
+
+
 

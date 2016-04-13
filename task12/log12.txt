@@ -4,6 +4,113 @@
 
 ----------------------------------------------------------------------
 
+Need to check whether the obesity-related markers are being affected
+by other factors (e.g. age, grade)
+    - fit linear model, then use the residuals from it so the
+        variables are removed from the data.
+
+Pseudocode:
+    - remove all of the possible variables affecting the data (except
+        obesity)
+    - do differential expression analysis using obese vs non-obese
+        samples
+    - check if the DEGs matches the obesity-specific probes they have
+        found in their paper.
+
+======================================================================
+
+6 April 2016
+
+----------------------------------------------------------------------
+
+Did DEG analysis on the residuals of the data
+    - came up with about 4000 genes with p < 0.05
+        - only about half of the Creighton obesity-related genes were
+            included in this list
+
+Do DEG on the original/raw data using obese vs non-obese design matrix
+    - see if the same genes come up
+
+All of the obesity-related genes from Creighton data showed up in the
+top table, but not all were in the top 799 genes (p value-wise).
+
+There were only 132 genes that had a fold change (not logFC) greater
+than 1.2 (which is how Creighton got the gene probe set in the first
+place).
+
+======================================================================
+
+7 April 2016
+
+----------------------------------------------------------------------
+
+390 obesity probes from Creighton data were in the top table with
+p-value < 0.01
+
+Both metagenes (Creighton and mine) were  able to separate obese samples
+from non-obese samples.
+    - there were overlap of 239 probes between these obesity-related markers
+
+Used the 239 overlapping probes to see if it can separate the obese
+from non-obese samples.
+    - it could separate the groups as well as the other sets of
+        obesity related probes.
+
+Pulled out the top 799 probes from the residual data and compared it with
+the other metagenes
+    - it matched 423 probes in my obesity related probes.
+    - it matched 168 probes from Creighton signature
+    - it matched 112 probes from overlap signature
+
+Only 216 probes from the creighton obesity-related probes were present
+in the residual top table (p < 0.01)
+    - means that of those 390 overlapping genes that matched, 216 of them
+        remained after controlling for all other clinical variables.
+
+
+======================================================================
+
+11 April 2016
+
+----------------------------------------------------------------------
+
+Re-do the analysis, but only use the caucasian samples
+    - remove the effect of race completely from the analysis/linear model
+
+======================================================================
+
+12 April 2016
+
+----------------------------------------------------------------------
+
+There were different genes in my 799 obesity genes compared with the
+799 genes found in the residual data. However, when  you only worked
+with caucasian samples, the top 799 genes found in the non-residual
+data were identical to those found in the residual data.
+    - The difference in genes found in the first analysis may have
+        been accounted for by the presence of caucasian samples?
+
+The results shown above was due to a bug in my code.
+    - there were no overlaps of the genes between the non-residual
+        and the residual data in caucasian samples
+
+Use the genes from the analyses to transform the TCGA data
+    - use residual (my, cr, red), caucasian (cr, ca), and
+        causcasian residual (cacrres, cares) genes
+
+======================================================================
+
+13 April 2016
+
+----------------------------------------------------------------------
+
+None of the metagenes found from the Creighton data correlated with
+BMI in any of the TCGA data.
+
+
+
+
+
 
 
 

@@ -446,7 +446,53 @@ test = lapply(seq_along(test), function(x) {
 })
 
 
+###############################################################################
+# try pathway enrichment analysis with all the samples from different cancer
+# types on the 'same scale'.
+###############################################################################
 
+## normalise the samples and put them on the same scale:
 
+## Combine all the samples from different cancer types:
+allsamples = cbind(BLCAmat, CESCmat, COADmat, KIRPmat, LIHCmat, READmat, SKCMmat, UCECmat)
+allbmi = rbind(BLCAbmi, CESCbmi, COADbmi, KIRPbmi, LIHCbmi, READbmi, SKCMbmi, UCECbmi)
+allbmi = allbmi[,4]
 
+## normalise using the bmi data:
+group = ifelse(allbmi == 'obese', 'obese', 'normal/overweight')
+design = model.matrix(~group)
+
+allsamplesnorm = normVoom(allsamples, design)$E
+
+## split the normalised data back into separate cancer types:
+files = gsub('bmi', 'mat', files)
+varnames = paste('scaled',files, sep='')
+for(i in 1:length(varnames)) {
+    sample = colnames(get(files[i]))
+    assign(varnames[i],allsamplesnorm[,sample])
+}
+
+scaledtest = list(scaledBLCAmat, scaledCESCmat, scaledCOADmat, scaledKIRPmat, scaledLIHCmat, scaledREADmat, scaledSKCMmat, scaledUCECmat)
+
+files = gsub('mat', 'bmi', files)
+
+scaledtest = lapply(seq_along(scaledtest), function(x) {
+              # make model matrix from bmi info
+              group = get(files[x])
+              group = group[,4]
+              group = ifelse(group == 'obese', 'obese', 'normal/overweight')
+              design = model.matrix(~group)
+
+              # normalise RNA-seq data:
+              y = scaledtest[[x]]
+
+              genenames = rownames(y)
+
+              # make index list for pathway genes:
+              ind = goind
+              ind = lapply(ind, function(z) genenames[which(z == 1)])
+
+              # pathway enrichment:
+              y = camera(y, goind, design, contrast = 2)
+})
 
