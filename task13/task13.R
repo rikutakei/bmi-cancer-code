@@ -72,6 +72,8 @@ cr_raw = exprs(cr_raw) ## change the format into matrix
 
 cr_obsgene = read.csv('*****')
 
+crclin = ********
+
 ###############################################################################
 ## Fuentes-Mattei et al data:
 
@@ -146,20 +148,57 @@ cr_obsmat = cr_obsmat[-(which(is.na(rownames(cr_obsmat)))),]
 cr_obsmat = collapseRows(cr_obsmat, rowGroup = unique(rownames(cr_obsmat)), rowID = unique(rownames(cr_obsmat)))
 cr_obsmat = cr_obsmat$datETcollapsed
 
+## TODO: get genes that are common from the creighton gene sets and the ICGC data set and use these genes to make the matrix
+cr_rawmeta = ****
+
 ## TODO: Do the heatmap stuff and add p-values to the plots
 cr_rawmeta = svd(cr_obsmat)
-cr_rawmeta = rank(cr_rawmeta$v[,1])/ncol(cr_obsmat)
-cr_rawmeta = 1-cr_rawmeta
+cr_rawmeta = cr_rawmeta$v[,1] # first principle component
+cr_rawmeta2 = cr_rawmeta$v[,2] # second principle component
+cr_rawmeta3 = cr_rawmeta$v[,3] # third principle component
+# cr_rawmeta = rank(cr_rawmeta$v[,1])/ncol(cr_obsmat)
+# cr_rawmeta = 1-cr_rawmeta
+cr_raword = order(cr_rawmeta)
 
 cr_obsmat_adj = t(apply(cr_obsmat, 1, function(x) (x-mean(x))/sd(x)))
 cr_obsmat_adj[cr_obsmat_adj > 3] = 3
 cr_obsmat_adj[cr_obsmat_adj < -3] = -3
 
 cr_adjmeta = svd(cr_obsmat)
-cr_adjmeta = rank(cr_adjmeta$v[,1])/ncol(cr_obsmat)
-cr_adjmeta = 1-cr_adjmeta
+cr_adjmeta = cr_adjmeta$v[,1] # first principle component
+cr_adjmeta2 = cr_adjmeta$v[,2] # second principle component
+cr_adjmeta3 = cr_adjmeta$v[,3] # third principle component
+# cr_adjmeta = rank(cr_adjmeta$v[,1])/ncol(cr_obsmat)
+# cr_adjmeta = 1-cr_adjmeta
+cr_adjord = order(cr_adjmeta)
 
-## get genes that are common from the creighton gene sets and the ICGC data set
+## Check if the metagene correlates with BMI:
+## TODO: revise the heatmap -- see if it has any difference when raw metagene values are used (instead of ranked metagene scores)
+## TODO: see how to get the p values for each group
+heatmap.2(cr_obsmat, trace='none',scale='none', col='bluered')
+heatmap.2(cr_obsmat, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_rawmeta))[rank(cr_rawmeta)])
+heatmap.2(obsgenemat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_rawmeta))[rank(cr_rawmeta)][cr_raword], Colv=F, Rowv=T)
+boxplot(cr_rawmeta~crclin$bmiStatus)
+plot(crclin$bmi, cr_rawmeta, pch = 20)
+abline(lm(cr_rawmeta~crclin$bmi))
+
+# repeat with adjusted data:
+heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered')
+heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_adjmeta))[rank(cr_adjmeta)])
+heatmap.2(obsgenemat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_adjmeta))[rank(cr_adjmeta)][cr_adjord], Colv=F, Rowv=T)
+boxplot(cr_adjmeta~crclin$bmiStatus)
+plot(crclin$bmi, cr_adjmeta, pch = 20)
+abline(lm(cr_adjmeta~crclin$bmi))
+
+## Make transformation matrix:
+
+
+## Transform the ICGC data:
+
+
+## Check if the metagene correlates with sample gene expression and/or BMI:
+
+
 
 
 
@@ -172,7 +211,8 @@ cr_adjmeta = 1-cr_adjmeta
 ###############################################################################
 ## Fuentes-Mattei metagene stuff
 
-
+## Validate it first in Creighton's data set:
+## TODO: find common genes from FM with both Creighton's and ICGC's gene list and use that as a starting point
 
 
 
@@ -184,6 +224,8 @@ cr_adjmeta = 1-cr_adjmeta
 ###############################################################################
 ## Creighton gene expression analysis stuff
 
+## TODO: make a correlation matrix of all the metagenes
+## TODO: make Venn diagram for the genes that I have found
 creighton_raw
 
 
@@ -198,7 +240,7 @@ creighton_raw
 ###############################################################################
 ## Pathway enrichment stuff
 
-
+## TODO: do the enrichment analysis with reactome and kegg
 
 
 
