@@ -7,9 +7,16 @@
 Pre-committee meeting code/results organising
 	- compile all of the codes and results so far into a single document
 
+======================================================================
 
+12 May 2016
 
+----------------------------------------------------------------------
 
+There were few samples with extremely high bmi, probably due to an input error
+	- swapped the height with weight
+
+For FM transformation matrix, I used adjusted transformation matrix for adjusted/standardised data (i.e. ICGC data), but used raw transformation matrix for raw data (i.e. Creighton data)
 
 
 
