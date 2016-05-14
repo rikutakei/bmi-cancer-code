@@ -230,8 +230,9 @@ cr_rawsvd = svd(cr_obsmat)
 cr_rawmeta  = cr_rawsvd$v[,1] # first principle component
 cr_rawmeta2 = cr_rawsvd$v[,2] # second principle component
 cr_rawmeta3 = cr_rawsvd$v[,3] # third principle component
-##cr_rawmeta = rank(cr_rawmeta$v[,1])/ncol(cr_obsmat)
-##cr_rawmeta = 1-cr_rawmeta
+cr_rawmeta = rank(cr_rawmeta$v[,1])/ncol(cr_obsmat)
+cr_rawmeta = -cr_rawmeta
+cr_rawmeta = 1-cr_rawmeta
 cr_raword = order(cr_rawmeta)
 
 cr_obsmat_adj = t(apply(cr_obsmat, 1, function(x) (x-mean(x))/sd(x)))
@@ -246,34 +247,43 @@ cr_adjmeta = rank(cr_adjmeta)/ncol(cr_obsmat)
 cr_adjmeta = 1-cr_adjmeta
 cr_adjord = order(cr_adjmeta)
 
+pdf('crmeta1.pdf')
 # see if it the raw or adjusted metagenes have any difference
 plot(1-cr_adjmeta, -cr_rawmeta, pch=20, main='Creighton metagene comparison', ylab='Raw metagene value', xlab='Adjusted metagene value')
 
+main='Creighton metagene (raw)'
 ## Check if the metagene correlates with BMI:
-heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered')
-heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_rawmeta))[rank(cr_rawmeta)])
-heatmap.2(cr_obsmat_adj[,cr_raword], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_rawmeta))[rank(cr_rawmeta)][cr_raword], Colv=F)
+heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered', main=main)
+heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_rawmeta))[rank(cr_rawmeta)], main=main)
+heatmap.2(cr_obsmat_adj[,cr_raword], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_rawmeta))[rank(cr_rawmeta)][cr_raword], Colv=F, main=main)
 bmifactor = factor(crclin$bmiStatus, levels=c("normal","overweight", "obese"))
-boxplot(cr_rawmeta~bmifactor)
-plot(crclin$bmi, cr_rawmeta, pch = 20)
+boxplot(cr_rawmeta~bmifactor, xlab = "Raw metagene", ylab = "BMI Status", main=paste(main, ' vs. BMI Status', sep=''))
+txt = summary(aov(cr_rawmeta~bmifactor))[[1]]$Pr[1]
+legend('top', bty='n', legend = as.expression(bquote(p == .(format(txt, digits=4)))))
+plot(crclin$bmi, cr_rawmeta, pch = 20, xlab = "Raw metagene", ylab = "BMI", main=paste(main, ' vs. BMI', sep=''))
 fit = lm(cr_rawmeta~crclin$bmi)
-abline(fit)
+abline(fit, col='red')
 txt = summary(fit)$adj.r.squared ## r squared = 0.145
 txt2 = summary(fit)$coef[2, 4] ## p value  = 4.30e-05
 legend('bottomright', bty='n', legend = c(as.expression(bquote(R^2 == .(format(txt, digits = 4)))), as.expression(bquote(p == .(format(txt2, digits=4))))))
 
+main='Creighton metagene (adjusted)'
 # repeat with adjusted data:
-heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered')
-heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_adjmeta))[rank(cr_adjmeta)])
-heatmap.2(cr_obsmat_adj[,cr_adjord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_adjmeta))[rank(cr_adjmeta)][cr_adjord], Colv=F)
-boxplot(cr_adjmeta~bmifactor)
-plot(crclin$bmi, cr_adjmeta, pch = 20)
+heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered', main=main)
+heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_adjmeta))[rank(cr_adjmeta)], main=main)
+heatmap.2(cr_obsmat_adj[,cr_adjord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_adjmeta))[rank(cr_adjmeta)][cr_adjord], Colv=F, main=main)
+boxplot(cr_adjmeta~bmifactor, xlab = "Adjusted metagene", ylab = "BMI Status", main=paste(main, ' vs. BMI Status', sep=''))
+txt = summary(aov(cr_adjmeta~bmifactor))[[1]]$Pr[1]
+legend('top', bty='n', legend = as.expression(bquote(p == .(format(txt, digits=4)))))
+plot(crclin$bmi, cr_adjmeta, pch = 20, xlab = "Adjusted metagene", ylab = "BMI", main=paste(main, ' vs. BMI', sep=''))
 fit = lm(cr_adjmeta~crclin$bmi)
 abline(fit, col="red")
 txt = summary(fit)$adj.r.squared ## r squared = 0.105
 txt2 = summary(fit)$coef[2, 4] ## p value  = 4.90e-04
 legend('bottomright', bty='n', legend = c(as.expression(bquote(R^2 == .(format(txt, digits = 4)))), as.expression(bquote(p == .(format(txt2, digits=4))))))
 dend = hclust(dist(cr_obsmat_adj))
+
+dev.off()
 
 ## Make transformation matrix:
 cr_rawtransmat = diag(1/cr_rawsvd$d) %*% t(cr_rawsvd$u)
@@ -330,13 +340,19 @@ for (i in 1:length(cancertypes)) {
 	assign(paste(cancertypes[i], 'cradjmeta',sep=''), t)
 }
 
+pdf('crtcga.pdf')
+
 ## Check if the metagene correlates with sample gene expression and/or BMI:
 for (i in 1:length(cancertypes)) {
 	dat = get(paste('cr', cancertypes[i], sep=''))
 	meta = get(paste(cancertypes[i], 'cradjmeta', sep=''))
 	bmi = get(paste(cancertypes[i], 'bmi', sep=''))
-	metaplot(dat, meta, bmi, dend, name = paste(cancertypes[i], '- Creighton metagene'))
+	txt = paste('Creighton metagene (', cancertypes[i], sep = "")
+	txt = paste(txt, ')', sep = "")
+	metaplot(dat, meta, bmi, dend, name = txt)
 }
+
+dev.off()
 
 ###############################################################################
 ## Fuentes-Mattei metagene stuff
@@ -366,6 +382,9 @@ dim(fm_obsmat) ## 116 genes
 ## TODO: Do the heatmap stuff and add p-values to the plots
 fm_rawsvd = svd(fm_obsmat)
 fm_rawmeta  = fm_rawsvd$v[,1] # first principle component
+fm_rawmeta = rank(fm_rawmeta$v[,1])/ncol(fm_obsmat)
+fm_rawmeta = -fm_rawmeta
+fm_rawmeta = 1-fm_rawmeta
 fm_raword = order(fm_rawmeta)
 
 fm_obsmat_adj = t(apply(fm_obsmat, 1, function(x) (x-mean(x))/sd(x)))
@@ -378,17 +397,23 @@ fm_adjmeta = rank(fm_adjmeta)/ncol(fm_obsmat)
 fm_adjmeta = 1-fm_adjmeta
 fm_adjord = order(fm_adjmeta)
 
+pdf('fmmeta1.pdf')
+
 # see if it the raw or adjusted metagenes have any difference
 plot(1-fm_adjmeta, -fm_rawmeta, pch=20, main='FM metagene comparison', ylab='Raw metagene value', xlab='Adjusted metagene value')
 
-heatmap.2(fm_obsmat_adj, trace='none',scale='none', col='bluered')
-heatmap.2(fm_obsmat_adj, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(-fm_rawmeta))[rank(fm_rawmeta)])
-heatmap.2(fm_obsmat_adj[,fm_raword], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(fm_rawmeta))[rank(-fm_rawmeta)][fm_raword], Colv=F)
+main='FM metagene (raw)'
+heatmap.2(fm_obsmat_adj, trace='none',scale='none', col='bluered', main=main)
+heatmap.2(fm_obsmat_adj, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(-fm_rawmeta))[rank(fm_rawmeta)], main=main)
+heatmap.2(fm_obsmat_adj[,fm_raword], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(fm_rawmeta))[rank(-fm_rawmeta)][fm_raword], Colv=F, main=main)
 
+main='FM metagene (Adjusted)'
 # repeat with adjusted metagene:
-heatmap.2(fm_obsmat_adj, trace='none',scale='none', col='bluered')
-heatmap.2(fm_obsmat_adj, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(fm_adjmeta))[rank(fm_adjmeta)])
-heatmap.2(fm_obsmat_adj[,fm_adjord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(fm_adjmeta))[rank(fm_adjmeta)][fm_adjord], Colv=F)
+heatmap.2(fm_obsmat_adj, trace='none',scale='none', col='bluered', main=main)
+heatmap.2(fm_obsmat_adj, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(fm_adjmeta))[rank(fm_adjmeta)], main=main)
+heatmap.2(fm_obsmat_adj[,fm_adjord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(fm_adjmeta))[rank(fm_adjmeta)][fm_adjord], Colv=F, main=main)
+
+dev.off()
 
 ## Make transformation matrix:
 fm_rawtransmat = diag(1/fm_rawsvd$d) %*% t(fm_rawsvd$u)
@@ -407,6 +432,9 @@ dim(cr_fmobsmat) ## 116 genes
 
 cr_fmrawsvd = svd(cr_fmobsmat)
 cr_fmrawmeta  = cr_fmrawsvd$v[,1] # first principle component
+cr_fmrawmeta = rank(cr_fmrawmeta$v[,1])/ncol(cr_fmobsmat)
+cr_fmrawmeta = -cr_fmrawmeta
+cr_fmrawmeta = 1-cr_fmrawmeta
 cr_fmraword = order(cr_fmrawmeta)
 
 cr_fmobsmat_adj = t(apply(cr_fmobsmat, 1, function(x) (x-mean(x))/sd(x)))
@@ -419,11 +447,15 @@ cr_fmadjmeta = rank(cr_fmadjmeta)/ncol(cr_fmobsmat)
 cr_fmadjmeta = 1-cr_fmadjmeta
 cr_fmadjord = order(cr_fmadjmeta)
 
+pdf('fmmeta2.pdf')
 # see if it the raw or adjusted metagenes have any difference
-plot(1-cr_fmadjmeta, -cr_fmrawmeta, pch=20, main='FM metagene comparison', ylab='Raw metagene value', xlab='Adjusted metagene value')
+plot(1-cr_fmadjmeta, -cr_fmrawmeta, pch=20, main='FM metagene comparison (Creighton data)', ylab='Raw metagene value', xlab='Adjusted metagene value')
 cr_fmdend= hclust(dist(cr_fmobsmat_adj))
 
-metaplot(cr_fmobsmat_adj, cr_fmadjmeta, crclin, cr_fmdend)
+main = "FM metagene (Creighton data)"
+metaplot(cr_fmobsmat_adj, cr_fmadjmeta, crclin, cr_fmdend, name = main)
+
+dev.off()
 
 ###############################################################################
 ## Get metagene using the transformation matrix
@@ -440,7 +472,12 @@ cr_fmtransmeta = cr_fmtransmeta[,1]
 cr_fmtransmeta = rank(cr_fmtransmeta)/ncol(cr_fmobsmat)
 cr_fmtransmeta = 1-cr_fmtransmeta
 
-metaplot(cr_fmobsmat_adj, cr_fmtransmeta, crclin, cr_fmdend)
+pdf('fmmeta3.pdf')
+
+main='FM metagene (Creighton transformed)'
+metaplot(cr_fmobsmat_adj, cr_fmtransmeta, crclin, cr_fmdend, name = main)
+
+dev.off()
 
 ###############################################################################
 ## Try it on ICGC data
@@ -470,13 +507,17 @@ for (i in 1:length(cancertypes)) {
 	assign(paste(cancertypes[i], 'fmadjmeta',sep=''), t)
 }
 
+pdf('fmtcga.pdf')
 ## Check if the metagene correlates with sample gene expression and/or BMI:
 for (i in 1:length(cancertypes)) {
 	dat = get(paste('fm', cancertypes[i], sep=''))
 	meta = get(paste(cancertypes[i], 'fmadjmeta', sep=''))
 	bmi = get(paste(cancertypes[i], 'bmi', sep=''))
-	metaplot2(dat, meta, bmi, name = paste(cancertypes[i], '- FM metagene'))
+	txt = paste('FM metagene (', cancertypes[i], sep = "")
+	txt = paste(txt, ')', sep = "")
+	metaplot2(dat, meta, bmi, name = txt)
 }
+dev.off()
 
 ###############################################################################
 ## Creighton gene expression analysis stuff
@@ -523,11 +564,13 @@ resobsgene = rownames(resobsgene[1:799,])
 rescrolgenes = resobsgene[which(resobsgene %in% cr_obsgene)]
 length(rescrolgenes) ## 168
 
+pdf('venn1.pdf')
 ## make venn diagram with res, raw, and cr obesity genes:
 setlist = list(Residual = resobsgene, My_genes = rawobsgenes, Creighton = cr_obsgene)
 OLlist = overLapper(setlist=setlist, sep='_', type='vennsets')
 counts = sapply(OLlist$Venn_List, length)
 vennPlot(counts = counts)
+dev.off()
 
 ## Do the same, but in Caucasian-only data:
 
@@ -572,15 +615,19 @@ caresobsgene = rownames(caresobsgene[1:799,])
 carescrolgenes = caresobsgene[which(caresobsgene %in% cr_obsgene)]
 length(carescrolgenes) ## 92
 
+pdf('venn2.pdf')
 ## make a Venn diagram with ca, cares, and cr obesity genes:
 setlist = list(Caucasian_residual = caresobsgene , Caucasian= caobsgene, Creighton = cr_obsgene)
 OLlist = overLapper(setlist=setlist, sep='_', type='vennsets')
 counts = sapply(OLlist$Venn_List, length)
 vennPlot(counts = counts)
+dev.off()
 
 ## validate these metagenes in creighton data:
 allobsname = c("rawobsgenes","crolgenes","resobsgene","rescrolgenes", "caobsgene","cacrolgenes","caresobsgene","carescrolgenes")
+namelist = c("Raw metagene","CR overlap metagene (raw)","Residual metagene","CR overlap metagene (residual)","Raw metagene (Caucasian/raw)","CR overlap metagene (Caucasian/raw)","Residual metagene (Caucasian/residual)","CR overlap metagene (Caucasian/residual)")
 metalist = list()
+pdf('degmetacr.pdf')
 for (i in 1:length(allobsname)) {
 	gene = get(allobsname[i])
 	mat = cr_raw[gene,]
@@ -588,21 +635,51 @@ for (i in 1:length(allobsname)) {
 	mat[mat < -3] = -3
 	mat[mat > 3] = 3
 	tmpsvd = svd(mat)
-	tmpsvd = rank(tmpsvd$v[,1])/ncol(mat)
-	metaplot2(mat, tmpsvd, crclin, name = allobsname[i])
-	metalist[[i]] = tmpsvd
-}
+	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
+	metaplot2(mat, tmpmeta, crclin, name = namelist[i])
+	metalist[[i]] = tmpmeta
 
+	txt = gsub("genes", "transmat", allobsname[i])
+	trmat = diag(1/tmpsvd$d) %*% t(tmpsvd$u)
+	assign(txt, trmat)
+}
+dev.off()
+
+pdf('cor.pdf')
 ## make correlation matrix
 x = matrix(1,103)
 for(i in 1:length(metalist)) {
 	x = cbind(x, metalist[[i]])
 }
 x = x[,-1]
-levelplot(cor(x, method = 'pearson'))
+colnames(x) = gsub('genes', '', allobsname)
+cormat = cor(x, method = 'pearson')
+cormatadj = x[,-which(colnames(x) == "caresobsgene")]
+cormatadj = cor(cormatadj, method = 'pearson')
+heatmap.2(cormat, trace = 'none', scale='none', col='bluered')
+heatmap.2(cormatadj, trace = 'none', scale='none', col='bluered')
+dev.off()
 
 ## check if this works on ICGC data:
+alltransname = gsub('genes', 'transmat', allobsname)
 
+for (i in 1:length(allobsname)) {
+	gene = get(allobsname[i])
+	transmat = get(alltransname[i])
+	for (j in 1:length(cancertypes)) {
+		cancer = get(cancertypes[j])
+		mat = cancer[gene,]
+		mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
+		mat[mat < -3] = -3
+		mat[mat > 3] = 3
+		tmpsvd = t(transmat %*% mat)
+		tmpsvd = tmpsvd[,1]
+		tmpsvd = rank(tmpsvd$v[,1])/ncol(mat)
+		main = paste('Transformed', namelist[j])
+		metaplot2(mat, tmpsvd, crclin, name = main)
+		metalist[[j]] = tmpsvd
+	}
+}
 
 
 
@@ -624,6 +701,10 @@ levelplot(cor(x, method = 'pearson'))
 
 
 
+###############################################################################
+## Extra stuff
+
+## TODO: Gatza signatures
 
 
 

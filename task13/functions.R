@@ -17,7 +17,8 @@ standardise_data = function(x, log = T) {
     x = t(apply(x, 1, function(x) (x-mean(x))/sd(x)))
     x[x < -3] = -3
     x[x > 3] = 3
-	x = x[complete.cases(x),]
+	x[is.nan(x)] = 0
+	#x = x[complete.cases(x),]
     return(x)
 }
 
@@ -39,8 +40,10 @@ metaplot = function(x, meta, bmi, dendrogram, name = '') {
 	heatmap.2(x, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(meta))[rank(meta)], Colv=NA, Rowv = as.dendrogram(dendrogram), dendrogram='row', main=name)
 	heatmap.2(x[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(meta))[rank(meta)][ord], Colv=NA, Rowv = as.dendrogram(dendrogram), dendrogram='row', main=name)
 	bmifactor = factor(bmi$bmiStatus, levels=c("normal","overweight", "obese"))
-	boxplot(meta~bmifactor, main=name)
-	plot(bmi$bmi,meta, pch = 20,main=name)
+	boxplot(meta~bmifactor, main=paste(name, "vs. BMI Status"), ylab = 'Metagene Score', xlab = 'BMI Status')
+	txt = summary(aov(meta~bmifactor))[[1]]$Pr[1]
+	legend('top', bty='n', legend = as.expression(bquote(p == .(format(txt, digits=4)))))
+	plot(bmi$bmi,meta, pch = 20, main=paste(name, "vs. BMI"), ylab = 'Metagene Score', xlab = 'BMI')
 	abline(lm(meta~bmi$bmi))
 	txt = summary(lm(meta~bmi$bmi))$adj.r.squared
 	txt2 = summary(lm(meta~bmi$bmi))$coef[2,4]
@@ -53,8 +56,10 @@ metaplot2 = function(x, meta, bmi, name = '') {
 	heatmap.2(x, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(meta))[rank(meta)], Colv=NA, main=name)
 	heatmap.2(x[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(meta))[rank(meta)][ord], Colv=NA, main=name)
 	bmifactor = factor(bmi$bmiStatus, levels=c("normal","overweight", "obese"))
-	boxplot(meta~bmifactor, main=name)
-	plot(bmi$bmi,meta, pch = 20,main=name)
+	boxplot(meta~bmifactor, main=paste(name, "vs. BMI Status"), ylab = 'Metagene Score', xlab = 'BMI Status')
+	txt = summary(aov(meta~bmifactor))[[1]]$Pr[1]
+	legend('top', bty='n', legend = as.expression(bquote(p == .(format(txt, digits=4)))))
+	plot(bmi$bmi,meta, pch = 20, main=paste(name, "vs. BMI"), ylab = 'Metagene Score', xlab = 'BMI')
 	abline(lm(meta~bmi$bmi))
 	txt = summary(lm(meta~bmi$bmi))$adj.r.squared
 	txt2 = summary(lm(meta~bmi$bmi))$coef[2,4]
