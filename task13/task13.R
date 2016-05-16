@@ -17,6 +17,7 @@ source('~/Documents/codes/bmi-cancer-code/task13/functions.R')
 source('http://bioconductor.org/biocLite.R')
 install.packages("data.table")
 install.packages("gplots")
+install.packages("RColorBrewer")
 biocLite()
 a
 y
@@ -56,12 +57,22 @@ y
 biocLite("reactome.db")
 a
 y
+biocLite("GMD")
+a
+y
 
 # load libraries:
 
 library(data.table)
 library(gplots)
 library(lattice)
+library(GMD)
+library(RColorBrewer)
+
+#heatmap stuff
+library("devtools")
+devtools::install_github("TomKellyGenetics/heatmap.2x", ref="master")
+library("heatmap.2x")
 
 #libraries for data wrangling
 library(WGCNA)
@@ -487,7 +498,7 @@ cancertypes = c('BLCA', 'CESC', 'COAD', 'KIRP', 'LIHC', 'READ', 'SKCM', 'UCEC')
 for (i in 1:length(cancertypes)) {
 	seq = get(cancertypes[i])
 	seq = seq[,common_genes]
-	seq = t(seq) ## make it genes by samples for voomICGC function
+	seq = t(seq) ## make it genes by samples for standardisation
 	txt = paste('fm', cancertypes[i], sep='')
 	assign(txt, seq)
 }
@@ -557,16 +568,16 @@ sum(restt$P.Value < 0.01)   # 1104 genes
 sum(restt$adj.P.Val < 0.01) # 0 genes
 
 ## How many Creighton genes are p < 0.01
-resobsgene = restt[restt$P.Value < 0.01,]
-length(which( cr_obsgene %in% rownames(resobsgene ) )) ## 216
+resobsgenes = restt[restt$P.Value < 0.01,]
+length(which( cr_obsgene %in% rownames(resobsgenes ) )) ## 216
 ## What about in top 799 genes?
-resobsgene = rownames(resobsgene[1:799,])
-rescrolgenes = resobsgene[which(resobsgene %in% cr_obsgene)]
+resobsgenes = rownames(resobsgenes[1:799,])
+rescrolgenes = resobsgenes[which(resobsgenes %in% cr_obsgene)]
 length(rescrolgenes) ## 168
 
 pdf('venn1.pdf')
 ## make venn diagram with res, raw, and cr obesity genes:
-setlist = list(Residual = resobsgene, My_genes = rawobsgenes, Creighton = cr_obsgene)
+setlist = list(Residual = resobsgenes, My_genes = rawobsgenes, Creighton = cr_obsgene)
 OLlist = overLapper(setlist=setlist, sep='_', type='vennsets')
 counts = sapply(OLlist$Venn_List, length)
 vennPlot(counts = counts)
@@ -589,11 +600,11 @@ sum(catt$P.Value < 0.01)   # 2129 genes
 sum(catt$adj.P.Val < 0.01) # 0 genes
 
 ## How many Creighton genes are p < 0.01
-caobsgene = catt[catt$P.Value < 0.01,]
-length(which( cr_obsgene %in% rownames(caobsgene ) )) ## 271
+caobsgenes = catt[catt$P.Value < 0.01,]
+length(which( cr_obsgene %in% rownames(caobsgenes ) )) ## 271
 ## What about in top 799 genes?
-caobsgene = rownames(caobsgene[1:799,])
-cacrolgenes = caobsgene[which(caobsgene %in% cr_obsgene)]
+caobsgenes = rownames(caobsgenes[1:799,])
+cacrolgenes = caobsgenes[which(caobsgenes %in% cr_obsgene)]
 length(cacrolgenes) ## 148
 
 ## Fit linear model on the Caucasian-only data  after removing all the other clinical variables:
@@ -608,29 +619,64 @@ sum(carestt$P.Value < 0.01)   # 1558 genes
 sum(carestt$adj.P.Val < 0.01) # 0 genes
 
 ## How many Creighton genes are p < 0.01
-caresobsgene = carestt[carestt$P.Value < 0.01,]
-length(which( cr_obsgene %in% rownames(caresobsgene ) )) ## 166
+caresobsgenes = carestt[carestt$P.Value < 0.01,]
+length(which( cr_obsgene %in% rownames(caresobsgenes ) )) ## 166
 ## What about in top 799 genes?
-caresobsgene = rownames(caresobsgene[1:799,])
-carescrolgenes = caresobsgene[which(caresobsgene %in% cr_obsgene)]
+caresobsgenes = rownames(caresobsgenes[1:799,])
+carescrolgenes = caresobsgenes[which(caresobsgenes %in% cr_obsgene)]
 length(carescrolgenes) ## 92
 
 pdf('venn2.pdf')
 ## make a Venn diagram with ca, cares, and cr obesity genes:
-setlist = list(Caucasian_residual = caresobsgene , Caucasian= caobsgene, Creighton = cr_obsgene)
+setlist = list(Caucasian_residual = caresobsgenes , Caucasian= caobsgenes, Creighton = cr_obsgene)
 OLlist = overLapper(setlist=setlist, sep='_', type='vennsets')
 counts = sapply(OLlist$Venn_List, length)
 vennPlot(counts = counts)
 dev.off()
 
+## for each metagenes, identify the genes that are in the ICGC data and use these genes for validataion
+cr_symmat = cr_raw
+tmpgenes = mapIds(hgu133a.db, keys = rownames(cr_symmat), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+rownames(cr_symmat) = tmpgenes
+cr_symmat = cr_symmat[-(which(is.na(rownames(cr_symmat)))),]
+cr_symmat = collapseRows(cr_symmat, unique(rownames(cr_symmat)), unique(rownames(cr_symmat)))
+cr_symmat = cr_symmat$datETcollapsed
+dim(cr_symmat) #13031 genes
+icgcgenes = colnames(BLCA)
+
+allobsname = c("rawobsgenes","crolgenes","resobsgenes","rescrolgenes", "caobsgenes","cacrolgenes","caresobsgenes","carescrolgenes")
+metalength = matrix(1,8)
+rownames(metalength) = allobsname
+for (i in 1:length(allobsname)) {
+	tmp = get(allobsname[i])
+	tmp = mapIds(hgu133a.db, keys = tmp, column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+	tmp = unique(tmp)
+	if (length(which(is.na(tmp))) > 0){
+		tmp = tmp[-which(is.na(tmp))]
+	}
+	tmp = tmp[which(tmp %in% rownames(cr_symmat))]
+	tmp = tmp[which(tmp %in% icgcgenes)]
+	assign(allobsname[i], tmp)
+	metalength[i,1] = length(tmp)
+}
+
+metalength
+##rawobsgenes     678
+##crolgenes       199
+##resobsgenes     655
+##rescrolgenes    147
+##caobsgenes      657
+##cacrolgenes     128
+##caresobsgenes   651
+##carescrolgenes  86
+
 ## validate these metagenes in creighton data:
-allobsname = c("rawobsgenes","crolgenes","resobsgene","rescrolgenes", "caobsgene","cacrolgenes","caresobsgene","carescrolgenes")
 namelist = c("Raw metagene","CR overlap metagene (raw)","Residual metagene","CR overlap metagene (residual)","Raw metagene (Caucasian/raw)","CR overlap metagene (Caucasian/raw)","Residual metagene (Caucasian/residual)","CR overlap metagene (Caucasian/residual)")
 metalist = list()
 pdf('degmetacr.pdf')
 for (i in 1:length(allobsname)) {
 	gene = get(allobsname[i])
-	mat = cr_raw[gene,]
+	mat = cr_symmat[gene,]
 	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
 	mat[mat < -3] = -3
 	mat[mat > 3] = 3
@@ -654,32 +700,232 @@ for(i in 1:length(metalist)) {
 x = x[,-1]
 colnames(x) = gsub('genes', '', allobsname)
 cormat = cor(x, method = 'pearson')
-cormatadj = x[,-which(colnames(x) == "caresobsgene")]
+cormatadj = x[,-which(colnames(x) == "caresobs")]
 cormatadj = cor(cormatadj, method = 'pearson')
-heatmap.2(cormat, trace = 'none', scale='none', col='bluered')
-heatmap.2(cormatadj, trace = 'none', scale='none', col='bluered')
+heatmap.2(cormat, trace = 'none', scale='none', col='bluered', cexRow = 1.0, cexCol = 1.0)
+heatmap.2(cormatadj, trace = 'none', scale='none', col='bluered', cexRow = 1.0, cexCol = 1.0)
 dev.off()
 
 ## check if this works on ICGC data:
 alltransname = gsub('genes', 'transmat', allobsname)
+bmimetalist = list()
 
 for (i in 1:length(allobsname)) {
+	pdfname = gsub('genes', 'meta.pdf', allobsname[i])
+	pdf(pdfname)
 	gene = get(allobsname[i])
 	transmat = get(alltransname[i])
+	tmpmeta = vector()
 	for (j in 1:length(cancertypes)) {
-		cancer = get(cancertypes[j])
+		cancer = t(get(cancertypes[j]))
 		mat = cancer[gene,]
-		mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
-		mat[mat < -3] = -3
-		mat[mat > 3] = 3
+		mat = standardise_data(mat)
+		bmi = get(paste(cancertypes[j], 'bmi', sep=''))
 		tmpsvd = t(transmat %*% mat)
-		tmpsvd = tmpsvd[,1]
+		tmpsvd = rank(tmpsvd[,1])/ncol(mat)
+		main = paste(namelist[i], '(')
+		main = paste(main, cancertypes[j], sep = '')
+		main = paste(main, ')', sep = '')
+		metaplot2(mat, tmpsvd, bmi, name = main)
+		tmpmeta = c(tmpmeta, tmpsvd)
+	}
+	bmimetalist[[i]] = tmpmeta
+	dev.off()
+}
+bmimetalist = as.data.frame(bmimetalist)
+colnames(bmimetalist) = gsub('genes', '', allobsname)
+
+###############################################################################
+## Gatza pathway stuff
+
+## import pathway gene list from the Gatza paper
+files = readLines('./gatzagenelist/pathlist.txt')
+files = paste('./gatzagenelist/', files, sep='')
+for (i in 1:length(files)) {
+	txt = gsub('./gatzagenelist/','',files[i])
+	txt = gsub('.txt','',txt)
+	genes = read.csv(files[i])
+	genes = as.vector(genes[,1])
+	assign(txt, genes)
+}
+paths = gsub('./gatzagenelist/','',files)
+paths = gsub('.txt','',paths)
+
+## convert the gene probes into gene symbols:
+pathlength = matrix(1,length(paths))
+rownames(pathlength) = paths
+for (i in 1:length(paths)) {
+	pathgenes = get(paths[i])
+	pathgenes = mapIds(hgu133a.db, keys = pathgenes, column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+	pathgenes = unique(pathgenes)
+	if (length(which(is.na(pathgenes))) > 0){
+		pathgenes = pathgenes[-which(is.na(pathgenes))]
+	}
+	pathgenes = which(pathgenes %in% colnames(BLCA))
+	assign(paths[i], pathgenes)
+	pathlength[i,1] = length(pathgenes)
+}
+pathlength
+#			no. of probes	no. common probes
+#akt_probes    206				191
+#bcat_probes    77  			 75
+#e2f1_probes   128  			120
+#egfr_probes   419  			399
+#er_probes     102  			 97
+#her2_probes   212  			199
+#ifna_probes    82  			 81
+#ifng_probes    88  			 84
+#myc_probes    425  			394
+#p53_probes    218  			206
+#p63_probes    277  			254
+#pi3k_probes   220  			209
+#pr_probes     212  			202
+#ras_probes    300  			281
+#src_probes     81  			 77
+#stat3_probes  107  			 98
+#tgfb_probes   101  			 93
+#tnfa_probes    95  			 90
+
+## make metagene with Gatza pathways in ICGC data samples
+gatzametalist = list()
+for (i in 1:length(paths)) {
+	pdfname = gsub('_probes', 'meta.pdf', paths[i])
+	pdf(pdfname)
+	gene = get(paths[i])
+	tmpmeta = vector()
+	for (j in 1:length(cancertypes)) {
+		cancer = t(get(cancertypes[j]))
+		mat = cancer[gene,]
+		mat = standardise_data(mat)
+		bmi = get(paste(cancertypes[j], 'bmi', sep=''))
+		tmpsvd = svd(mat)
 		tmpsvd = rank(tmpsvd$v[,1])/ncol(mat)
-		main = paste('Transformed', namelist[j])
-		metaplot2(mat, tmpsvd, crclin, name = main)
-		metalist[[j]] = tmpsvd
+		main = gsub('_probes', '', paths[i])
+		main = toupper(main)
+		main = paste(main, 'metagene (')
+		main = paste(main, cancertypes[j], sep = '')
+		main = paste(main, ')', sep = '')
+		metaplot2(mat, tmpsvd, bmi, name = main)
+		tmpmeta = c(tmpmeta, tmpsvd)
+	}
+	gatzametalist[[i]] = tmpmeta
+	dev.off()
+}
+gatzametalist = as.data.frame(gatzametalist)
+colnames(gatzametalist) = paths
+
+## stick the BMI metagenes and Gatza metagenes together:
+allmetagenes = cbind(bmimetalist, gatzametalist)
+allmetagenes = t(data.matrix(allmetagenes))
+
+## need to make a combined clinical data for all the cancer types
+x = c('bcr_patient_barcode', 'tumor_tissue_site', 'weight', 'height')
+allclin = BLCAclin[,x]
+for(i in 2:length(cancertypes)) {
+	txt = paste(cancertypes[i], 'clin', sep='')
+	clin = get(txt)
+	clin = clin[,x]
+	allclin = rbind(allclin, clin)
+}
+rownames(allclin) = allclin$bcr_patient_barcode
+allclin = allclin[colnames(allmetagenes),-1]
+allclin$weight = as.numeric(as.character(allclin$weight))
+allclin$height = as.numeric(as.character(allclin$height))
+allclin[,4] = allclin$weight/((allclin$height/100)^2)
+colnames(allclin)[4] = 'bmi'
+x = allclin[,4]
+for (i in 1:length(x)) {
+	if(x[i] >= 30){
+		x[i] = "obese"
+	} else if(x[i] < 25){
+		x[i] = "normal"
+	} else {
+		x[i] = "overweight"
 	}
 }
+allclin[,5] = x
+colnames(allclin)[5] = 'bmiStatus'
+
+## prepare colours for cancer types:
+brewercol = brewer.pal(8, "Set1")
+cancertypecol = c()
+type = c()
+for (i in 1:length(cancertypes)) {
+	type = c(type, rep(cancertypes[i], nrow(get(cancertypes[i]))))
+	cancertypecol = c(cancertypecol, rep(brewercol[i], nrow(get(cancertypes[i]))))
+}
+allclin[,1] = type
+
+## prepare colours for BMI status:
+brewercol = brewer.pal(3, "Set1")
+bmicol = allclin[,4]
+for (i in 1:length(bmicol)) {
+	if(bmicol[i] >= 30){
+		bmicol[i] = brewercol[1]
+	} else if(bmicol[i] < 25){
+		bmicol[i] = brewercol[2]
+	} else {
+		bmicol[i] = brewercol[3]
+	}
+}
+
+#bmicol = ifelse(allclin[,5] == "obese", brewercol[1], brewercol[2])
+
+allcol = cbind(CancerType=cancertypecol, BMIStatus=bmicol)
+
+pdf()
+#heatmap3(allmetagenes, scale='none', ColSideColors=allcol)
+heatmap.2x(allmetagenes, scale='none', trace='none', col="bluered", dendrogram="both")
+x = cor(t(allmetagenes), method='pearson')
+heatmap.2(x, trace = 'none', scale='none', col='bluered', main="Pearson correlation")
+x = cor(t(allmetagenes), method='spearman')
+heatmap.2(x, trace = 'none', scale='none', col='bluered', main='Spearman correlation')
+dev.off()
+
+devtools::install_github("TomKellyGenetics/heatmap.2x", ref="supr")
+
+# This example takes a subtype "#EF559E" subset and splits the heatmap be mutation status "CDH!_Mut"
+
+bb3_Stat<-bb3[,bb3[8,]=="#EF559E" & cut == 1 & is.na(CDH1_Mt3)==F] ##bb3 is my column colour matrix of clinical and mutation data
+dim(dataset)
+## tree for genes
+tree_exprSL_voom_corr_dist<-as.dendrogram(hclust(as.dist(1-cor(t(dataset)))))
+## split columns by mutation status
+data_low<-as.matrix(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR[,bb3[8,]=="#EF559E" & CDH1_Mt3==1 & is.na(CDH1_Mt3)==F & cut == 1])
+data_high<-as.matrix(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR[,bb3[8,]=="#EF559E" & CDH1_Mt3==0 & is.na(CDH1_Mt3)==F & cut == 1])
+## trees for each split dataset (correlation distance)
+dist_low<-dist(as.dist(1-cor(data_low)))
+hc_low<-hclust(dist_low,method='complete')
+dist_high<-dist(as.dist(1-cor(data_high)))
+hc_high<-hclust(dist_high,method='complete')
+## join trees together
+hc<-merge(as.dendrogram(hc_low), as.dendrogram(hc_high), height=max(hc_low$height, hc_high$height)+1)
+#rr<-RowCols[match(rownames(dataset), rownames(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR)),]
+# plot clusters of genes
+Cluster<-cutree(as.hclust(tree_exprSL_voom_corr_dist),4)
+ColCluster<-c("red", "blue", "green", "orange")[Cluster]
+#rr<-cbind(rr, ColCluster)  ## rr is my row colour data for genes
+heatmap.mik.mod2(as.matrix(dataset[,match(labels(hc), colnames(dataset))]), scale='none', trace='none', col=bluered(50), ColSideColors=bb3_Stat[,match(labels(hc), colnames(dataset))], Colv=hc, Rowv=tree_exprSL_voom_corr_dist, margin=c(12, 12), dendrogram='both', main = "TCGA Breast Gene Expression Gatza 2011", xlab = "Sample", ylab = "Pathway", cexCol=1.15, cexRow=1.15, keysize=2.25)
+
+## add legend to heatmap
+legend("topleft",legend=c(rep("", 11), "Normal", "Tumour", "Metastasis", "", "Ductal", "Lobular", "", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "", "Positive","Negative", "", "Basal","Her2","LumA","LumB","Normal","","Somatic Mutation","Somatic Mutation (Slient)","Wildtype","Somatic Mutation (Gene 1)","Somatic Mutation (Gene 2)", "Somatic Mutation (Gene 3)", "Somatic Mutation (Gene 1 Silent)","Somatic Mutation (Gene 2 Silent)", "Somatic Mutation (Gene 3 Silent)", "Somatic Mutation (Gene 1 and 2)", "", "CDH1 Low",  "CDH1 High"),
+
+tree_exprSL_voom_eu_dist<-as.dendrogram(hclust(dist(dataset)))
+data_low<-as.matrix(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR[,bb3[8,]=="#EF559E" & CDH1_Mt3==1 & is.na(CDH1_Mt3)==F & cut == 1])
+data_high<-as.matrix(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR[,bb3[8,]=="#EF559E" & CDH1_Mt3==0 & is.na(CDH1_Mt3)==F & cut == 1])
+dist_low<-dist(t(data_low), method = "euclidean")
+hc_low<-hclust(dist_low,method='complete')
+dist_high<-dist(t(data_high), method = "euclidean")
+hc_high<-hclust(dist_high,method='complete')
+hc<-merge(as.dendrogram(hc_low), as.dendrogram(hc_high))
+hc<-merge(as.dendrogram(hc_low), as.dendrogram(hc_high), height=max(hc_low$height, hc_high$height)+1)#rr<-RowCols[match(rownames(dataset), rownames(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR)),]
+Cluster<-cutree(as.hclust(tree_exprSL_voom_eu_dist),4)
+ColCluster<-c("red", "blue", "green", "orange")[Cluster]
+#rr[, ncol(rr)]<-ColCluster
+heatmap.mik.mod2(as.matrix(dataset[,match(labels(hc), colnames(dataset))]), scale='none', trace='none', col=bluered(50), ColSideColors=bb3_Stat[,match(labels(hc), colnames(dataset))], Colv=hc, Rowv=tree_exprSL_voom_eu_dist, margin=c(12, 12), dendrogram='both', main = "TCGA Breast Gene Expression Gatza 2011", xlab = "Sample", ylab = "Pathway", cexCol=1.15, cexRow=1.15, keysize=2.25)
+
+
+
 
 
 

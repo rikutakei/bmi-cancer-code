@@ -8,7 +8,7 @@ icgc_to_tcga = function(x) {
 }
 
 #Make a function to log and standardise cancer data
-# make sure that the cancer data have genes as their columns, not rows
+# make sure that the cancer data have genes as their rows, not columns
 # if the matrix to be standardised doesn't have to be logged, then set the log variable to F
 standardise_data = function(x, log = T) {
     if (log) {
