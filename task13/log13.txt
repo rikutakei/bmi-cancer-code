@@ -18,11 +18,21 @@ There were few samples with extremely high bmi, probably due to an input error
 
 For FM transformation matrix, I used adjusted transformation matrix for adjusted/standardised data (i.e. ICGC data), but used raw transformation matrix for raw data (i.e. Creighton data)
 
+======================================================================
 
+27 May 2016
 
+----------------------------------------------------------------------
 
+Was checking for all the metagene directions (both the Gatza and my BMI metagenes)
 
+Made sure that all of the metagenes were going in the same directions
 
+Used the transformation matrix from Creighton data, using the Gatza pathway signatures, instead of applying separate SVD onto each cancer type and getting a metagene from this.
+
+The heatmap created from these metagenes showed a downregulation in 4 cancer types and upregulation in the others in all of the Gatza metagenes that I have flipped.
+	- not sure if this result is due to the flipping, or something significant...
+	- need to talk to Mik when he's back
 
 
 
