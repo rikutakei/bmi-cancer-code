@@ -390,7 +390,6 @@ common_genes = common_genes[which(common_genes %in% crgenenames)]
 fm_obsmat = fm_obsmat[common_genes,]
 dim(fm_obsmat) ## 116 genes
 
-## TODO: Do the heatmap stuff and add p-values to the plots
 fm_rawsvd = svd(fm_obsmat)
 fm_rawmeta  = fm_rawsvd$v[,1] # first principle component
 fm_rawmeta = rank(fm_rawmeta$v[,1])/ncol(fm_obsmat)
@@ -670,6 +669,33 @@ metalength
 ##caresobsgenes   651
 ##carescrolgenes  86
 
+# need to check if the metagenes are going in the same direction
+
+# find the genes that are common across all of the metagenes:
+checkgenes= c(rawobsgenes,crolgenes,resobsgenes,rescrolgenes, caobsgenes,cacrolgenes,caresobsgenes,carescrolgenes)
+checkgenes = table(checkgenes)[which(table(checkgenes) == 8)]
+checkgenes = names(checkgenes)
+
+# check for the direction of each of the metagene, using the common genes
+# identified above
+pdf('metadirection.pdf')
+for (i in 1:length(allobsname)) {
+	gene = get(allobsname[i])
+	mat = cr_symmat[gene,]
+	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
+	mat[mat < -3] = -3
+	mat[mat > 3] = 3
+	tmpsvd = svd(mat)
+	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
+	tmpmeta = 1-tmpmeta
+	mat = mat[checkgenes,]
+	ord = order(tmpmeta)
+	heatmap.2(mat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=namelist[i])
+}
+dev.off()
+
+# the seventh metagene (caucasian+residual) must be flipped so all the metagenes are going in the same direction
+
 ## validate these metagenes in creighton data:
 namelist = c("Raw metagene","CR overlap metagene (raw)","Residual metagene","CR overlap metagene (residual)","Raw metagene (Caucasian/raw)","CR overlap metagene (Caucasian/raw)","Residual metagene (Caucasian/residual)","CR overlap metagene (Caucasian/residual)")
 metalist = list()
@@ -682,6 +708,10 @@ for (i in 1:length(allobsname)) {
 	mat[mat > 3] = 3
 	tmpsvd = svd(mat)
 	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
+	if (i == 7) {
+		tmpmeta = -tmpmeta
+	}
+	tmpmeta = 1-tmpmeta
 	metaplot2(mat, tmpmeta, crclin, name = namelist[i])
 	metalist[[i]] = tmpmeta
 
@@ -723,6 +753,7 @@ for (i in 1:length(allobsname)) {
 		bmi = get(paste(cancertypes[j], 'bmi', sep=''))
 		tmpsvd = t(transmat %*% mat)
 		tmpsvd = rank(tmpsvd[,1])/ncol(mat)
+		tmpsvd = 1-tmpsvd
 		main = paste(namelist[i], '(')
 		main = paste(main, cancertypes[j], sep = '')
 		main = paste(main, ')', sep = '')
@@ -761,7 +792,7 @@ for (i in 1:length(paths)) {
 	if (length(which(is.na(pathgenes))) > 0){
 		pathgenes = pathgenes[-which(is.na(pathgenes))]
 	}
-	pathgenes = which(pathgenes %in% colnames(BLCA))
+	pathgenes = pathgenes[which(pathgenes %in% colnames(BLCA))]
 	assign(paths[i], pathgenes)
 	pathlength[i,1] = length(pathgenes)
 }
@@ -786,20 +817,108 @@ pathlength
 #tgfb_probes   101  			 93
 #tnfa_probes    95  			 90
 
-## make metagene with Gatza pathways in ICGC data samples
+# need to check if the metagenes are going in the same direction
+
+# find the genes that are common across all of the metagenes:
+checkgzgenes= c(akt_probes, bcat_probes, e2f1_probes, egfr_probes, er_probes, her2_probes, ifna_probes, ifng_probes, myc_probes, p53_probes, p63_probes, pi3k_probes, pr_probes, ras_probes, src_probes, stat3_probes, tgfb_probes, tnfa_probes)
+checkgzgenes = table(checkgzgenes)[which(table(checkgzgenes) == 8)]
+checkgzgenes = names(checkgzgenes)
+
+# there were no common genes, so pick a gene (or genes) that will represent the
+# pathways
+checkgzgenes= c('AKT2','APOBEC3F','EBP','EGFR','IL6R','JAK2','JUN','FOS','MAPK4','MTOR','MYC','PIK3C2A','RAP2A','STAT1','STAT2','STAT3','TLR1','TLR3','TP63')
+
+# check for the direction of each of the gatza metagene, using the common genes
+# identified above
+
+# make data matrix for the heatmap:
+matheat = cr_symmat[checkgzgenes,]
+matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+matheat[matheat < -3] = -3
+matheat[matheat > 3] = 3
+
+pdf('gatzametadirection.pdf')
+for (i in 1:length(paths)) {
+	gene = get(paths[i])
+	mat = cr_symmat[gene,]
+	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
+	mat[mat < -3] = -3
+	mat[mat > 3] = 3
+	tmpsvd = svd(mat)
+	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
+	tmpmeta = 1-tmpmeta
+	ord = order(tmpmeta)
+	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=paths[i])
+}
+dev.off()
+
+# check to see if the gatza metagenes and BMI metagenes are going in the same
+# direction:
+pdf('bmiandgatzametadirection.pdf')
+for (i in 1:length(allobsname)) {
+	gene = get(allobsname[i])
+	mat = cr_symmat[gene,]
+	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
+	mat[mat < -3] = -3
+	mat[mat > 3] = 3
+	tmpsvd = svd(mat)
+	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
+	tmpmeta = 1-tmpmeta
+	if (i == 7) {
+		tmpmeta = -tmpmeta
+	}
+	ord = order(tmpmeta)
+	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=namelist[i])
+}
+dev.off()
+
+# BMI metagenes were all going in the same direction as the gatza metagenes,
+# and these metagenes from Gatza paper needs to be flipped:
+mgflip = c('e2f1_probes', 'egfr_probes', 'ifna_probes', 'ifng_probes', 'pi3k_probes', 'pr_probes', 'tnfa_probes')
+
+# Check if it works:
+pdf('gatzametadirectioncheck.pdf')
+for (i in 1:length(paths)) {
+	gene = get(paths[i])
+	mat = cr_symmat[gene,]
+	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
+	mat[mat < -3] = -3
+	mat[mat > 3] = 3
+	tmpsvd = svd(mat)
+	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
+	tmpmeta = 1-tmpmeta
+	if (paths[i] %in% mgflip) {
+		tmpmeta = -tmpmeta
+	}
+	ord = order(tmpmeta)
+	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=paths[i])
+}
+dev.off()
+
+## make metagene with Gatza pathways in ICGC data samples:
 gatzametalist = list()
 for (i in 1:length(paths)) {
 	pdfname = gsub('_probes', 'meta.pdf', paths[i])
 	pdf(pdfname)
 	gene = get(paths[i])
+	mat = cr_symmat[gene,]
+	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
+	mat[mat < -3] = -3
+	mat[mat > 3] = 3
+	tmpsvd = svd(mat)
+	trmat = diag(1/tmpsvd$d) %*% t(tmpsvd$u)
 	tmpmeta = vector()
 	for (j in 1:length(cancertypes)) {
 		cancer = t(get(cancertypes[j]))
 		mat = cancer[gene,]
 		mat = standardise_data(mat)
 		bmi = get(paste(cancertypes[j], 'bmi', sep=''))
-		tmpsvd = svd(mat)
-		tmpsvd = rank(tmpsvd$v[,1])/ncol(mat)
+		tmpsvd = t(trmat %*% mat)
+		tmpsvd = rank(tmpsvd[,1])/ncol(mat)
+		tmpsvd = 1-tmpsvd
+		if (paths[i] %in% mgflip) {
+			tmpmeta = -tmpmeta
+		}
 		main = gsub('_probes', '', paths[i])
 		main = toupper(main)
 		main = paste(main, 'metagene (')
@@ -871,16 +990,43 @@ for (i in 1:length(bmicol)) {
 
 #bmicol = ifelse(allclin[,5] == "obese", brewercol[1], brewercol[2])
 
-allcol = cbind(CancerType=cancertypecol, BMIStatus=bmicol)
+allcol = cbind(BMIStatus=bmicol, CancerType=cancertypecol)
 
-pdf()
-#heatmap3(allmetagenes, scale='none', ColSideColors=allcol)
-heatmap.2x(allmetagenes, scale='none', trace='none', col="bluered", dendrogram="both")
+pdf(file='gatzabmimeta.pdf',width=14, height=7)
+heatmap.2x(allmetagenes, scale='none', trace='none', col='bluered', ColSideColors=cancertypecol)
+heatmap.2x(allmetagenes[, 1:1872], scale='none', trace='none', col='bluered', ColSideColors=cancertypecol, Colv=F)
+bmiord = order(bmicol)
+heatmap3(allmetagenes[, bmiord], scale='none', ColSideColors=allcol, Colv=NA)
+heatmap3(allmetagenes[,1:1872], scale='none', ColSideColors=bmicol, Colv=NA)
+#heatmap.2x(allmetagenes, scale='none', trace='none', col="bluered", dendrogram="both")
+dev.off()
+
+pdf('allmetacor.pdf')
 x = cor(t(allmetagenes), method='pearson')
 heatmap.2(x, trace = 'none', scale='none', col='bluered', main="Pearson correlation")
 x = cor(t(allmetagenes), method='spearman')
 heatmap.2(x, trace = 'none', scale='none', col='bluered', main='Spearman correlation')
 dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 devtools::install_github("TomKellyGenetics/heatmap.2x", ref="supr")
 
