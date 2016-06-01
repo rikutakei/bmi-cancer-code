@@ -34,6 +34,32 @@ The heatmap created from these metagenes showed a downregulation in 4 cancer typ
 	- not sure if this result is due to the flipping, or something significant...
 	- need to talk to Mik when he's back
 
+======================================================================
+
+31 May 2016
+
+----------------------------------------------------------------------
+
+Need to do:
+	- check direction of metagenes relative to the important gene(s) for that pathway
+	- spearman correlation with BMI to get the genes that are correlated with BMI, rather than genes that are significantly differentially expressed between obese and non-obese group
+	- DEG analysis on UCEC data
+	- more deeper analysis on the BLCA (on overweight samples being significant than obese, with significant ANOVA p-value)
+
+======================================================================
+
+1 June 2016
+
+----------------------------------------------------------------------
+
+Identified genes to represent for that pathway
+	- Some pathwys didn't have an obvious representative gene, so I did some quick search on wiki/kegg/pubmed and took an educated guess for these pathways
+		- took a guess for these pathways: BCAT, E2F1, IFNA, IFNG, P53, PI3K, PR, TGFB
+
+the pathways i need to flip are:
+	- AKT, E2F1, HER2, IFNA, IFNG, P63, TGFB
+
+
 
 
 

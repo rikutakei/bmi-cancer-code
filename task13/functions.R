@@ -65,3 +65,34 @@ metaplot2 = function(x, meta, bmi, name = '') {
 	txt2 = summary(lm(meta~bmi$bmi))$coef[2,4]
 	legend('bottomright', bty='n', legend = c(as.expression(bquote(R^2 == .(format(txt, digits = 4)))), as.expression(bquote(p == .(format(txt2, digits=4))))))
 }
+
+## Function to print heatmaps and other plots with p-values:
+metaplot3 = function(x, meta, bmi, name = '') {
+	ord = order(meta)
+	#heatmap
+	heatmap.2(x, trace='none',scale='none', col='bluered', main=name)
+	heatmap.2(x, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(meta))[rank(meta)], Colv=NA, main=name)
+	heatmap.2(x[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(meta))[rank(meta)][ord], Colv=NA, main=name)
+
+	# boxplot
+	bmifactor = factor(bmi$bmiStatus, levels=c("normal","overweight", "obese"))
+	boxplot(meta~bmifactor, main=paste(name, "vs. BMI Status"), ylab = 'Metagene Score', xlab = 'BMI Status', ylim = c(-0.05, 1.1))
+
+	#p-value/legend for boxplot
+	normind = which('normal' == bmifactor)
+	ovind = which('overweight' == bmifactor)
+	obind = which('obese' == bmifactor)
+	txt = t.test(meta[c(normind,ovind)]~bmifactor[c(normind,ovind)], alternative= 'two.sided')$p.value
+	txt2 = t.test(meta[c(normind,obind)]~bmifactor[c(normind,obind)], alternative= 'two.sided')$p.value
+	txt3 = summary(aov(meta~bmifactor))[[1]]$Pr[1]
+	legend(x = 1.6, y = 1.08, bty='n', legend = as.expression(bquote(p == .(format(txt, digits=4)))))
+	legend(x = 2.6, y = 1.08, bty='n', legend = as.expression(bquote(p == .(format(txt2, digits=4)))))
+	legend('bottomright', bty='n', legend = as.expression(bquote("ANOVA p" == .(format(txt3, digits=4)))))
+
+	# scatter plot
+	plot(bmi$bmi,meta, pch = 20, main=paste(name, "vs. BMI"), ylab = 'Metagene Score', xlab = 'BMI')
+	abline(lm(meta~bmi$bmi))
+	txt = summary(lm(meta~bmi$bmi))$adj.r.squared
+	txt2 = summary(lm(meta~bmi$bmi))$coef[2,4]
+	legend('bottomright', bty='n', legend = c(as.expression(bquote(R^2 == .(format(txt, digits = 4)))), as.expression(bquote(p == .(format(txt2, digits=4))))))
+}

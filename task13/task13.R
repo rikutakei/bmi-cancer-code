@@ -241,7 +241,6 @@ cr_rawsvd = svd(cr_obsmat)
 cr_rawmeta  = cr_rawsvd$v[,1] # first principle component
 cr_rawmeta2 = cr_rawsvd$v[,2] # second principle component
 cr_rawmeta3 = cr_rawsvd$v[,3] # third principle component
-cr_rawmeta = rank(cr_rawmeta$v[,1])/ncol(cr_obsmat)
 cr_rawmeta = -cr_rawmeta
 cr_rawmeta = 1-cr_rawmeta
 cr_raword = order(cr_rawmeta)
@@ -260,7 +259,7 @@ cr_adjord = order(cr_adjmeta)
 
 pdf('crmeta1.pdf')
 # see if it the raw or adjusted metagenes have any difference
-plot(1-cr_adjmeta, -cr_rawmeta, pch=20, main='Creighton metagene comparison', ylab='Raw metagene value', xlab='Adjusted metagene value')
+plot(cr_adjmeta, cr_rawmeta, pch=20, main='Creighton metagene comparison', ylab='Raw metagene value', xlab='Adjusted metagene value')
 
 main='Creighton metagene (raw)'
 ## Check if the metagene correlates with BMI:
@@ -268,9 +267,18 @@ heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered', main=main)
 heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_rawmeta))[rank(cr_rawmeta)], main=main)
 heatmap.2(cr_obsmat_adj[,cr_raword], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_rawmeta))[rank(cr_rawmeta)][cr_raword], Colv=F, main=main)
 bmifactor = factor(crclin$bmiStatus, levels=c("normal","overweight", "obese"))
-boxplot(cr_rawmeta~bmifactor, xlab = "Raw metagene", ylab = "BMI Status", main=paste(main, ' vs. BMI Status', sep=''))
-txt = summary(aov(cr_rawmeta~bmifactor))[[1]]$Pr[1]
-legend('top', bty='n', legend = as.expression(bquote(p == .(format(txt, digits=4)))))
+boxplot(cr_rawmeta~bmifactor, ylab = "Raw metagene", xlab = "BMI Status", main=paste(main, ' vs. BMI Status', sep=''))
+
+normind = which('normal' == bmifactor)
+ovind = which('overweight' == bmifactor)
+obind = which('obese' == bmifactor)
+txt = t.test(cr_rawmeta[c(normalind,ovind)]~bmifactor[c(normalind,ovind)], alternative= 'two.sided')$p.value ## p = 0.3450
+txt2 = t.test(cr_rawmeta[c(normalind,obind)]~bmifactor[c(normalind,obind)], alternative= 'two.sided')$p.value ## p = 6.061e-05
+txt3 = summary(aov(cr_rawmeta~bmifactor))[[1]]$Pr[1]
+legend(x = 1.6, y = 0.91, bty='n', legend = as.expression(bquote(p == .(format(txt, digits=4)))))
+legend(x = 2.6, y = 0.91, bty='n', legend = as.expression(bquote(p == .(format(txt2, digits=4)))))
+legend('bottomright', bty='n', legend = as.expression(bquote("ANOVA p" == .(format(txt3, digits=4)))))
+
 plot(crclin$bmi, cr_rawmeta, pch = 20, xlab = "Raw metagene", ylab = "BMI", main=paste(main, ' vs. BMI', sep=''))
 fit = lm(cr_rawmeta~crclin$bmi)
 abline(fit, col='red')
@@ -283,9 +291,18 @@ main='Creighton metagene (adjusted)'
 heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered', main=main)
 heatmap.2(cr_obsmat_adj, trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_adjmeta))[rank(cr_adjmeta)], main=main)
 heatmap.2(cr_obsmat_adj[,cr_adjord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(cr_adjmeta))[rank(cr_adjmeta)][cr_adjord], Colv=F, main=main)
-boxplot(cr_adjmeta~bmifactor, xlab = "Adjusted metagene", ylab = "BMI Status", main=paste(main, ' vs. BMI Status', sep=''))
-txt = summary(aov(cr_adjmeta~bmifactor))[[1]]$Pr[1]
-legend('top', bty='n', legend = as.expression(bquote(p == .(format(txt, digits=4)))))
+boxplot(cr_adjmeta~bmifactor, xlab = "Adjusted metagene", ylab = "BMI Status", main=paste(main, ' vs. BMI Status', sep=''), ylim = c(-0.05, 1.1))
+
+normind = which('normal' == bmifactor)
+ovind = which('overweight' == bmifactor)
+obind = which('obese' == bmifactor)
+txt = t.test(cr_adjmeta[c(normalind,ovind)]~bmifactor[c(normalind,ovind)], alternative= 'two.sided')$p.value ## p = 0.3450
+txt2 = t.test(cr_adjmeta[c(normalind,obind)]~bmifactor[c(normalind,obind)], alternative= 'two.sided')$p.value ## p = 6.061e-05
+txt3 = summary(aov(cr_adjmeta~bmifactor))[[1]]$Pr[1]
+legend(x = 1.6, y = 1.08, bty='n', legend = as.expression(bquote(p == .(format(txt, digits=4)))))
+legend(x = 2.6, y = 1.08, bty='n', legend = as.expression(bquote(p == .(format(txt2, digits=4)))))
+legend('bottomright', bty='n', legend = as.expression(bquote("ANOVA p" == .(format(txt3, digits=4)))))
+
 plot(crclin$bmi, cr_adjmeta, pch = 20, xlab = "Adjusted metagene", ylab = "BMI", main=paste(main, ' vs. BMI', sep=''))
 fit = lm(cr_adjmeta~crclin$bmi)
 abline(fit, col="red")
@@ -348,6 +365,8 @@ for (i in 1:length(cancertypes)) {
 for (i in 1:length(cancertypes)) {
 	t = t(cr_adjtransmat %*% get(paste('cr', cancertypes[i], sep='')))
 	t = t[,1]
+	t = rank(t)/length(t)
+	t = 1-t
 	assign(paste(cancertypes[i], 'cradjmeta',sep=''), t)
 }
 
@@ -360,7 +379,7 @@ for (i in 1:length(cancertypes)) {
 	bmi = get(paste(cancertypes[i], 'bmi', sep=''))
 	txt = paste('Creighton metagene (', cancertypes[i], sep = "")
 	txt = paste(txt, ')', sep = "")
-	metaplot(dat, meta, bmi, dend, name = txt)
+	metaplot3(dat, meta, bmi, name = txt)
 }
 
 dev.off()
@@ -442,7 +461,6 @@ dim(cr_fmobsmat) ## 116 genes
 
 cr_fmrawsvd = svd(cr_fmobsmat)
 cr_fmrawmeta  = cr_fmrawsvd$v[,1] # first principle component
-cr_fmrawmeta = rank(cr_fmrawmeta$v[,1])/ncol(cr_fmobsmat)
 cr_fmrawmeta = -cr_fmrawmeta
 cr_fmrawmeta = 1-cr_fmrawmeta
 cr_fmraword = order(cr_fmrawmeta)
@@ -463,7 +481,7 @@ plot(1-cr_fmadjmeta, -cr_fmrawmeta, pch=20, main='FM metagene comparison (Creigh
 cr_fmdend= hclust(dist(cr_fmobsmat_adj))
 
 main = "FM metagene (Creighton data)"
-metaplot(cr_fmobsmat_adj, cr_fmadjmeta, crclin, cr_fmdend, name = main)
+metaplot3(cr_fmobsmat_adj, cr_fmadjmeta, crclin, name = main)
 
 dev.off()
 
@@ -485,7 +503,7 @@ cr_fmtransmeta = 1-cr_fmtransmeta
 pdf('fmmeta3.pdf')
 
 main='FM metagene (Creighton transformed)'
-metaplot(cr_fmobsmat_adj, cr_fmtransmeta, crclin, cr_fmdend, name = main)
+metaplot3(cr_fmobsmat_adj, cr_fmtransmeta, crclin, name = main)
 
 dev.off()
 
@@ -514,6 +532,8 @@ for (i in 1:length(cancertypes)) {
 for (i in 1:length(cancertypes)) {
 	t = t(fm_adjtransmat %*% get(paste('fm', cancertypes[i], sep='')))
 	t = t[,1]
+	t = rank(t)/length(t)
+	t = 1-t
 	assign(paste(cancertypes[i], 'fmadjmeta',sep=''), t)
 }
 
@@ -525,7 +545,7 @@ for (i in 1:length(cancertypes)) {
 	bmi = get(paste(cancertypes[i], 'bmi', sep=''))
 	txt = paste('FM metagene (', cancertypes[i], sep = "")
 	txt = paste(txt, ')', sep = "")
-	metaplot2(dat, meta, bmi, name = txt)
+	metaplot3(dat, meta, bmi, name = txt)
 }
 dev.off()
 
@@ -709,10 +729,9 @@ for (i in 1:length(allobsname)) {
 	tmpsvd = svd(mat)
 	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
 	if (i == 7) {
-		tmpmeta = -tmpmeta
+		tmpmeta = 1-tmpmeta
 	}
-	tmpmeta = 1-tmpmeta
-	metaplot2(mat, tmpmeta, crclin, name = namelist[i])
+	metaplot3(mat, tmpmeta, crclin, name = namelist[i])
 	metalist[[i]] = tmpmeta
 
 	txt = gsub("genes", "transmat", allobsname[i])
@@ -752,12 +771,16 @@ for (i in 1:length(allobsname)) {
 		mat = standardise_data(mat)
 		bmi = get(paste(cancertypes[j], 'bmi', sep=''))
 		tmpsvd = t(transmat %*% mat)
-		tmpsvd = rank(tmpsvd[,1])/ncol(mat)
-		tmpsvd = 1-tmpsvd
+		#tmpsvd = rank(tmpsvd[,1])/ncol(mat)
+		tmpsvd = tmpsvd[,1]
+		tmpsvd = rank(tmpsvd)/length(tmpsvd)
+		if (i == 7) {
+			tmpsvd = 1-tmpsvd
+		}
 		main = paste(namelist[i], '(')
 		main = paste(main, cancertypes[j], sep = '')
 		main = paste(main, ')', sep = '')
-		metaplot2(mat, tmpsvd, bmi, name = main)
+		metaplot3(mat, tmpsvd, bmi, name = main)
 		tmpmeta = c(tmpmeta, tmpsvd)
 	}
 	bmimetalist[[i]] = tmpmeta
@@ -824,12 +847,10 @@ checkgzgenes= c(akt_probes, bcat_probes, e2f1_probes, egfr_probes, er_probes, he
 checkgzgenes = table(checkgzgenes)[which(table(checkgzgenes) == 8)]
 checkgzgenes = names(checkgzgenes)
 
-# there were no common genes, so pick a gene (or genes) that will represent the
-# pathways
-checkgzgenes= c('AKT2','APOBEC3F','EBP','EGFR','IL6R','JAK2','JUN','FOS','MAPK4','MTOR','MYC','PIK3C2A','RAP2A','STAT1','STAT2','STAT3','TLR1','TLR3','TP63')
+# check for the direction of each of the gatza metagene
 
-# check for the direction of each of the gatza metagene, using the common genes
-# identified above
+# list of genes related to/representing the pathway:
+checkgene = c('AKT2', 'CCNE1', 'MYB', 'EGFR', 'ESR1', 'ERBB2', 'IRF7', 'IRF1', 'MYC', 'CASP3', 'TP63', 'TP63', 'TGFA', 'HRAS', 'SRC', 'STAT3', 'PDGFB', 'TNFAIP2')
 
 # make data matrix for the heatmap:
 matheat = cr_symmat[checkgzgenes,]
@@ -848,33 +869,38 @@ for (i in 1:length(paths)) {
 	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
 	tmpmeta = 1-tmpmeta
 	ord = order(tmpmeta)
-	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=paths[i])
+	ind = which(gene %in% checkgene[i])
+	matheat= cr_symmat[gene,]
+	matheat = matheat[ind:(ind+1),]
+	matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+	matheat[matheat < -3] = -3
+	matheat[matheat > 3] = 3
+	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=paths[i], cexRow=1.0)
 }
 dev.off()
 
 # check to see if the gatza metagenes and BMI metagenes are going in the same
 # direction:
-pdf('bmiandgatzametadirection.pdf')
-for (i in 1:length(allobsname)) {
-	gene = get(allobsname[i])
-	mat = cr_symmat[gene,]
-	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
-	mat[mat < -3] = -3
-	mat[mat > 3] = 3
-	tmpsvd = svd(mat)
-	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
-	tmpmeta = 1-tmpmeta
-	if (i == 7) {
-		tmpmeta = -tmpmeta
-	}
-	ord = order(tmpmeta)
-	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=namelist[i])
-}
-dev.off()
+#pdf('bmiandgatzametadirection.pdf')
+#for (i in 1:length(allobsname)) {
+#	gene = get(allobsname[i])
+#	mat = cr_symmat[gene,]
+#	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
+#	mat[mat < -3] = -3
+#	mat[mat > 3] = 3
+#	tmpsvd = svd(mat)
+#	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
+#	if (i == 7) {
+#		tmpmeta = 1-tmpmeta
+#	}
+#	ord = order(tmpmeta)
+#	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=namelist[i])
+#}
+#dev.off()
 
 # BMI metagenes were all going in the same direction as the gatza metagenes,
 # and these metagenes from Gatza paper needs to be flipped:
-mgflip = c('e2f1_probes', 'egfr_probes', 'ifna_probes', 'ifng_probes', 'pi3k_probes', 'pr_probes', 'tnfa_probes')
+mgflip = c('akt_probes', 'e2f1_probes', 'her2_probes', 'ifna_probes', 'ifng_probes', 'p63_probes', 'tgfb_probes')
 
 # Check if it works:
 pdf('gatzametadirectioncheck.pdf')
@@ -886,12 +912,18 @@ for (i in 1:length(paths)) {
 	mat[mat > 3] = 3
 	tmpsvd = svd(mat)
 	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
-	tmpmeta = 1-tmpmeta
 	if (paths[i] %in% mgflip) {
 		tmpmeta = -tmpmeta
 	}
+	tmpmeta = 1-tmpmeta
 	ord = order(tmpmeta)
-	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=paths[i])
+	ind = which(gene %in% checkgene[i])
+	matheat= cr_symmat[gene,]
+	matheat = matheat[ind:(ind+1),]
+	matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+	matheat[matheat < -3] = -3
+	matheat[matheat > 3] = 3
+	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=paths[i], cexRow=1)
 }
 dev.off()
 
@@ -914,17 +946,17 @@ for (i in 1:length(paths)) {
 		mat = standardise_data(mat)
 		bmi = get(paste(cancertypes[j], 'bmi', sep=''))
 		tmpsvd = t(trmat %*% mat)
-		tmpsvd = rank(tmpsvd[,1])/ncol(mat)
-		tmpsvd = 1-tmpsvd
+		tmpsvd = tmpsvd[,1]
+		tmpsvd = rank(tmpsvd)/length(tmpsvd)
 		if (paths[i] %in% mgflip) {
-			tmpmeta = -tmpmeta
+			tmpsvd = 1-tmpsvd
 		}
 		main = gsub('_probes', '', paths[i])
 		main = toupper(main)
 		main = paste(main, 'metagene (')
 		main = paste(main, cancertypes[j], sep = '')
 		main = paste(main, ')', sep = '')
-		metaplot2(mat, tmpsvd, bmi, name = main)
+		metaplot3(mat, tmpsvd, bmi, name = main)
 		tmpmeta = c(tmpmeta, tmpsvd)
 	}
 	gatzametalist[[i]] = tmpmeta
@@ -1005,6 +1037,8 @@ pdf('allmetacor.pdf')
 x = cor(t(allmetagenes), method='pearson')
 heatmap.2(x, trace = 'none', scale='none', col='bluered', main="Pearson correlation")
 x = cor(t(allmetagenes), method='spearman')
+heatmap.2(x, trace = 'none', scale='none', col='bluered', main='Spearman correlation')
+x = cor(gatzametalist, method='spearman')
 heatmap.2(x, trace = 'none', scale='none', col='bluered', main='Spearman correlation')
 dev.off()
 
