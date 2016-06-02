@@ -1022,15 +1022,28 @@ for (i in 1:length(bmicol)) {
 
 #bmicol = ifelse(allclin[,5] == "obese", brewercol[1], brewercol[2])
 
-allcol = cbind(BMIStatus=bmicol, CancerType=cancertypecol)
+## make a vector of the order of the samples (by BMI values), per cancer type.
+bmiord = vector()
+bmivalcol = vector()
+count = 0
+for (i in 1:length(cancertypes)) {
+	type = cancertypes[i]
+	cl = allclin[which(allclin$tumor_tissue_site == type),]
+	cl = cl$bmi
+	ord = order(rank(cl)) + count
+	col = bluered(length(ord))[rank(cl)]
+
+	bmiord = c(bmiord, ord)
+	bmivalcol = c(bmivalcol, col)
+	count = length(bmiord)
+}
+
+allcol = rbind(BMI=bmivalcol, BMIStatus=bmicol, CancerType=cancertypecol)
 
 pdf(file='gatzabmimeta.pdf',width=14, height=7)
-heatmap.2x(allmetagenes, scale='none', trace='none', col='bluered', ColSideColors=cancertypecol)
-heatmap.2x(allmetagenes[, 1:1872], scale='none', trace='none', col='bluered', ColSideColors=cancertypecol, Colv=F)
-bmiord = order(bmicol)
-heatmap3(allmetagenes[, bmiord], scale='none', ColSideColors=allcol, Colv=NA)
-heatmap3(allmetagenes[,1:1872], scale='none', ColSideColors=bmicol, Colv=NA)
-#heatmap.2x(allmetagenes, scale='none', trace='none', col="bluered", dendrogram="both")
+heatmap.2x(allmetagenes, scale='none', trace='none', col=bluered(2000), ColSideColors=allcol)
+heatmap.2x(allmetagenes[, 1:1872], scale='none', trace='none', col=bluered(2000), ColSideColors=allcol, Colv=F)
+heatmap.2x(allmetagenes[, bmiord], scale='none', trace='none', col=bluered(2000), ColSideColors=allcol[,bmiord], Colv=F)
 dev.off()
 
 pdf('allmetacor.pdf')
@@ -1042,95 +1055,58 @@ x = cor(gatzametalist, method='spearman')
 heatmap.2(x, trace = 'none', scale='none', col='bluered', main='Spearman correlation')
 dev.off()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-devtools::install_github("TomKellyGenetics/heatmap.2x", ref="supr")
-
-# This example takes a subtype "#EF559E" subset and splits the heatmap be mutation status "CDH!_Mut"
-
-bb3_Stat<-bb3[,bb3[8,]=="#EF559E" & cut == 1 & is.na(CDH1_Mt3)==F] ##bb3 is my column colour matrix of clinical and mutation data
-dim(dataset)
-## tree for genes
-tree_exprSL_voom_corr_dist<-as.dendrogram(hclust(as.dist(1-cor(t(dataset)))))
-## split columns by mutation status
-data_low<-as.matrix(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR[,bb3[8,]=="#EF559E" & CDH1_Mt3==1 & is.na(CDH1_Mt3)==F & cut == 1])
-data_high<-as.matrix(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR[,bb3[8,]=="#EF559E" & CDH1_Mt3==0 & is.na(CDH1_Mt3)==F & cut == 1])
-## trees for each split dataset (correlation distance)
-dist_low<-dist(as.dist(1-cor(data_low)))
-hc_low<-hclust(dist_low,method='complete')
-dist_high<-dist(as.dist(1-cor(data_high)))
-hc_high<-hclust(dist_high,method='complete')
-## join trees together
-hc<-merge(as.dendrogram(hc_low), as.dendrogram(hc_high), height=max(hc_low$height, hc_high$height)+1)
-#rr<-RowCols[match(rownames(dataset), rownames(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR)),]
-# plot clusters of genes
-Cluster<-cutree(as.hclust(tree_exprSL_voom_corr_dist),4)
-ColCluster<-c("red", "blue", "green", "orange")[Cluster]
-#rr<-cbind(rr, ColCluster)  ## rr is my row colour data for genes
-heatmap.mik.mod2(as.matrix(dataset[,match(labels(hc), colnames(dataset))]), scale='none', trace='none', col=bluered(50), ColSideColors=bb3_Stat[,match(labels(hc), colnames(dataset))], Colv=hc, Rowv=tree_exprSL_voom_corr_dist, margin=c(12, 12), dendrogram='both', main = "TCGA Breast Gene Expression Gatza 2011", xlab = "Sample", ylab = "Pathway", cexCol=1.15, cexRow=1.15, keysize=2.25)
-
-## add legend to heatmap
-legend("topleft",legend=c(rep("", 11), "Normal", "Tumour", "Metastasis", "", "Ductal", "Lobular", "", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "", "Positive","Negative", "", "Basal","Her2","LumA","LumB","Normal","","Somatic Mutation","Somatic Mutation (Slient)","Wildtype","Somatic Mutation (Gene 1)","Somatic Mutation (Gene 2)", "Somatic Mutation (Gene 3)", "Somatic Mutation (Gene 1 Silent)","Somatic Mutation (Gene 2 Silent)", "Somatic Mutation (Gene 3 Silent)", "Somatic Mutation (Gene 1 and 2)", "", "CDH1 Low",  "CDH1 High"),
-
-tree_exprSL_voom_eu_dist<-as.dendrogram(hclust(dist(dataset)))
-data_low<-as.matrix(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR[,bb3[8,]=="#EF559E" & CDH1_Mt3==1 & is.na(CDH1_Mt3)==F & cut == 1])
-data_high<-as.matrix(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR[,bb3[8,]=="#EF559E" & CDH1_Mt3==0 & is.na(CDH1_Mt3)==F & cut == 1])
-dist_low<-dist(t(data_low), method = "euclidean")
-hc_low<-hclust(dist_low,method='complete')
-dist_high<-dist(t(data_high), method = "euclidean")
-hc_high<-hclust(dist_high,method='complete')
-hc<-merge(as.dendrogram(hc_low), as.dendrogram(hc_high))
-hc<-merge(as.dendrogram(hc_low), as.dendrogram(hc_high), height=max(hc_low$height, hc_high$height)+1)#rr<-RowCols[match(rownames(dataset), rownames(Data_Matrix_BRCA_RNASeq_Voom_GatzaYR)),]
-Cluster<-cutree(as.hclust(tree_exprSL_voom_eu_dist),4)
-ColCluster<-c("red", "blue", "green", "orange")[Cluster]
-#rr[, ncol(rr)]<-ColCluster
-heatmap.mik.mod2(as.matrix(dataset[,match(labels(hc), colnames(dataset))]), scale='none', trace='none', col=bluered(50), ColSideColors=bb3_Stat[,match(labels(hc), colnames(dataset))], Colv=hc, Rowv=tree_exprSL_voom_eu_dist, margin=c(12, 12), dendrogram='both', main = "TCGA Breast Gene Expression Gatza 2011", xlab = "Sample", ylab = "Pathway", cexCol=1.15, cexRow=1.15, keysize=2.25)
-
-
-
-
-
-
-
 ###############################################################################
 ## Common genes across ICGC data stuff
 
 ## use codes from task11?
-
-
 
 ###############################################################################
 ## Pathway enrichment stuff
 
 ## TODO: do the enrichment analysis with reactome and kegg
 
+###############################################################################
+## Conitnuous BMI DEG stuff
 
+#quick reminder: cr_raw = raw Creighton data, crclin = Creighton clinical data
 
+# get normalised Creighton microarray gene expression data
+crcontmat = cr_raw
+dim(crcontmat) # 22283 103
+
+# Correlate it with the BMI value of the samples:
+bmicor = cor(t(crcontmat), crclin$bmi, method = "spearman")
+colnames(bmicor) = "correlation"
+
+# Try it with standardised data:
+crstdmat = crcontmat
+crstdmat = t(apply(crstdmat, 1, function(x) (x-mean(x))/sd(x)))
+
+bmicorstd = cor(t(crstdmat), crclin$bmi, method = "spearman")
+colnames(bmicorstd) = "correlation"
+
+## The values didn't have any difference in the results
+
+summary(bmicor)
+
+## The highest correlation of the genes with BMI was 0.41721 in Creighton data
+
+###############################################################################
+## UCEC DEG stuff
+
+datmat = UCEC
+datbmi = UCECbmi
+datmat = voomICGC(t(datmat), datbmi)
+
+group = datbmi$bmiStatus
+group = ifelse(group=='obese', 'obese', 'non-obese')
+design = model.matrix(~group)
+tt = make_tt(datmat,design)
 
 
 
 ###############################################################################
-## Extra stuff
-
-## TODO: Gatza signatures
+## Methylation stuff
 
 
 

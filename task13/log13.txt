@@ -59,6 +59,47 @@ Identified genes to represent for that pathway
 the pathways i need to flip are:
 	- AKT, E2F1, HER2, IFNA, IFNG, P63, TGFB
 
+======================================================================
+
+2 June 2016
+
+----------------------------------------------------------------------
+
+Flipped the metagenes and made heatmaps and correlation matrix with those metagenes.
+	- heatmap.2x was used to show multiple columns
+		- did no ordering, ordering by cancer types, and ordering by both cancer types and BMI values
+
+Starting on DEG analysis on Creighton data, using BMI as a continuous variable, not a discrete obese/non-obese variable
+	- Need to find a spearman correlation of the genes with BMI values
+	- need to scramble the data to find what the cutoff p-values for the genes are, so I can use it to find  the obesity associated genes.
+	- Also need to check the overlap between these genes and the discrete-DEGs
+
+The correlation of the genes with BMI gave the highest correlation of 0.41721, so it seems like it's not that great...?
+	- check with Mik
+
+Starting DEG analysis on UCEC data, then transforming it on Creighton data and other cancer types
+
+
+
+
+
+
+
+
+
+
+
+
+
+======================================================================
+
+2 June 2016
+
+----------------------------------------------------------------------
+
+
+
+
 
 
 

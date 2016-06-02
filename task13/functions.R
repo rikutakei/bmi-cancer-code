@@ -33,6 +33,15 @@ voomICGC = function(x, bmi) {
 	return(a)
 }
 
+#make_tt function from task09:
+# Function to make topTable from RNA-seq and model
+make_tt = function(x, model) {
+    fit = lmFit(x, model)
+    fit = eBayes(fit)
+    tt = topTable(fit, coef = 2, adjust = 'BH', n = nrow(x))
+    return(tt)
+}
+
 ## Function to print heatmaps and other plots:
 metaplot = function(x, meta, bmi, dendrogram, name = '') {
 	ord = order(meta)
