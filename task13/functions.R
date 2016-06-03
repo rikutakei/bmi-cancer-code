@@ -42,6 +42,16 @@ make_tt = function(x, model) {
     return(tt)
 }
 
+# Function to pull out the DEGs from the top table
+pull_deg = function(x, adj = F, y = 0.05) {
+    if(adj) {
+        x = x[x$adj.P.Val <= y,]
+    } else {
+        x = x[x$P.Value <= y,]
+    }
+    return(x)
+}
+
 ## Function to print heatmaps and other plots:
 metaplot = function(x, meta, bmi, dendrogram, name = '') {
 	ord = order(meta)

@@ -79,23 +79,17 @@ The correlation of the genes with BMI gave the highest correlation of 0.41721, s
 
 Starting DEG analysis on UCEC data, then transforming it on Creighton data and other cancer types
 
-
-
-
-
-
-
-
-
-
-
-
-
 ======================================================================
 
-2 June 2016
+3 June 2016
 
 ----------------------------------------------------------------------
+
+Got DEGs from the UCEC data:
+	- there were 281 genes with adj.p-value < 0.05 and about 3000 genes with unadjusted p-value < 0.05 (top 799 genes were selected)
+	- The metagene made from the genes with significant unadjusted p-value had to be flipped so the scores were gong in the same direction as the gene expression
+	- metagene from adjusted p-values didn't need to be flipped, as they were already going in the same direction
+
 
 
 

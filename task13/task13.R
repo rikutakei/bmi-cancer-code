@@ -1102,6 +1102,52 @@ group = datbmi$bmiStatus
 group = ifelse(group=='obese', 'obese', 'non-obese')
 design = model.matrix(~group)
 tt = make_tt(datmat,design)
+ucecdegs = pull_deg(tt, adj = F)
+adjucecdegs = pull_deg(tt, adj = T)
+
+ucecoblist = rownames(ucecdegs)[1:799]
+ucecadjoblist = rownames(adjucecdegs)
+
+# check in UCEC data first
+datmat = t(UCEC)
+datmat = datmat[ucecoblist,]
+datmatadj = datmat[ucecadjoblist,]
+datmat = t(apply(datmat, 1, function(x) (x-mean(x))/sd(x)))
+datmatadj = t(apply(datmatadj, 1, function(x) (x-mean(x))/sd(x)))
+
+ucecsvd = svd(datmat)
+ucecmeta = ucecsvd$v[,1]
+ucecmeta = rank(ucecmeta)/length(ucecmeta)
+ucecmeta = 1-ucecmeta
+ucecord = order(ucecmeta)
+
+ucecadjsvd = svd(datmatadj)
+ucecadjmeta = ucecadjsvd$v[,1]
+ucecadjmeta = rank(ucecadjmeta)/length(ucecadjmeta)
+ucecadjord = order(ucecadjmeta)
+
+datmat[datmat > 3] = 3
+datmat[datmat < -3] = -3
+datmatadj[datmatadj > 3] = 3
+datmatadj[datmatadj < -3] = -3
+
+maintxt = "UCEC unadjusted metagene"
+maintxt2 = "UCEC adjusted metagene"
+
+pdf('ucecmeta.pdf')
+metaplot3(datmat, ucecmeta, datbmi, name=maintxt)
+metaplot3(datmatadj, ucecadjmeta, datbmi, name=maintxt2)
+dev.off()
+
+
+
+
+
+
+
+
+
+
 
 
 
