@@ -19,47 +19,21 @@ install.packages("data.table")
 install.packages("gplots")
 install.packages("RColorBrewer")
 biocLite()
-a
-y
 biocLite("WGCNA")
-a
-y
 biocLite("hgu133a.db")
-a
-y
+biocLite("hgu133b.db")
+biocLite("hgu133plus2.db")
 biocLite("tidyr")
-a
-y
 biocLite("dplyr")
-a
-y
 biocLite("limma")
-a
-y
 biocLite("edgeR")
-a
-y
 biocLite("DESeq")
-a
-y
 biocLite("affy")
-a
-y
 biocLite("org.Hs.eg.db")
-a
-y
 biocLite("KEGG.db")
-a
-y
 biocLite("GO.db")
-a
-y
 biocLite("reactome.db")
-a
-y
 biocLite("GMD")
-a
-y
 
 # load libraries:
 
@@ -68,6 +42,8 @@ library(gplots)
 library(lattice)
 library(GMD)
 library(RColorBrewer)
+library(mclust)
+library(colorRamps)
 
 #heatmap stuff
 library("devtools")
@@ -77,6 +53,8 @@ library("heatmap.2x")
 #libraries for data wrangling
 library(WGCNA)
 library(hgu133a.db)
+library(hgu133b.db)
+library(hgu133plus2.db)
 library(tidyr)
 library(dplyr)
 
@@ -850,10 +828,10 @@ checkgzgenes = names(checkgzgenes)
 # check for the direction of each of the gatza metagene
 
 # list of genes related to/representing the pathway:
-checkgene = c('AKT2', 'CCNE1', 'MYB', 'EGFR', 'ESR1', 'ERBB2', 'IRF7', 'IRF1', 'MYC', 'CASP3', 'TP63', 'TP63', 'TGFA', 'HRAS', 'SRC', 'STAT3', 'PDGFB', 'TNFAIP2')
+checkgene = c('AKT1', 'AKT2', 'CTNNB1', 'E2F1', 'EGFR', 'ESR1', 'ERBB2', 'IFNA1', 'IFNG', 'MYC', 'TP53', 'TP63', 'PIK3CA', 'PGR', 'HRAS', 'SRC', 'STAT3', 'TGFB1', 'TNF')
 
 # make data matrix for the heatmap:
-matheat = cr_symmat[checkgzgenes,]
+matheat = cr_symmat[checkgene,]
 matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
 matheat[matheat < -3] = -3
 matheat[matheat > 3] = 3
@@ -867,65 +845,77 @@ for (i in 1:length(paths)) {
 	mat[mat > 3] = 3
 	tmpsvd = svd(mat)
 	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
-	tmpmeta = 1-tmpmeta
 	ord = order(tmpmeta)
-	ind = which(gene %in% checkgene[i])
-	matheat= cr_symmat[gene,]
-	matheat = matheat[ind:(ind+1),]
-	matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
-	matheat[matheat < -3] = -3
-	matheat[matheat > 3] = 3
 	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=paths[i], cexRow=1.0)
 }
 dev.off()
 
-# check to see if the gatza metagenes and BMI metagenes are going in the same
-# direction:
-#pdf('bmiandgatzametadirection.pdf')
-#for (i in 1:length(allobsname)) {
-#	gene = get(allobsname[i])
-#	mat = cr_symmat[gene,]
-#	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
-#	mat[mat < -3] = -3
-#	mat[mat > 3] = 3
-#	tmpsvd = svd(mat)
-#	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
-#	if (i == 7) {
-#		tmpmeta = 1-tmpmeta
-#	}
-#	ord = order(tmpmeta)
-#	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=namelist[i])
-#}
-#dev.off()
-
 # BMI metagenes were all going in the same direction as the gatza metagenes,
 # and these metagenes from Gatza paper needs to be flipped:
-mgflip = c('akt_probes', 'e2f1_probes', 'her2_probes', 'ifna_probes', 'ifng_probes', 'p63_probes', 'tgfb_probes')
+mgflip = c('akt_probes', 'bcat_probes', 'e2f1_probes', 'egfr_probes', 'er_probes', 'ifna_probes', 'myc_probes', 'p53_probes', 'ras_probes', 'stat3_probes', 'tnfa_probes')
 
 # Check if it works:
 pdf('gatzametadirectioncheck.pdf')
+crgatzametalist = list()
 for (i in 1:length(paths)) {
 	gene = get(paths[i])
 	mat = cr_symmat[gene,]
 	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
-	mat[mat < -3] = -3
-	mat[mat > 3] = 3
 	tmpsvd = svd(mat)
 	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
 	if (paths[i] %in% mgflip) {
-		tmpmeta = -tmpmeta
+		tmpmeta = 1-tmpmeta
 	}
-	tmpmeta = 1-tmpmeta
 	ord = order(tmpmeta)
-	ind = which(gene %in% checkgene[i])
-	matheat= cr_symmat[gene,]
-	matheat = matheat[ind:(ind+1),]
-	matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
-	matheat[matheat < -3] = -3
-	matheat[matheat > 3] = 3
 	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=paths[i], cexRow=1)
+	crgatzametalist[[i]] = tmpmeta
 }
 dev.off()
+crgatzametalist = as.data.frame(crgatzametalist)
+colnames(crgatzametalist) = gsub('_probes', '', paths)
+crgatzametalist = t(as.matrix(crgatzametalist))
+
+gatzacor = cor(t(crgatzametalist), method='pearson')
+gatzacor2 = cor(t(crgatzametalist), method='spearman')
+
+gatzaord = c('er', 'pr', 'p53', 'bcat', 'e2f1', 'pi3k', 'myc', 'ras', 'ifna', 'ifng', 'akt', 'p63', 'src', 'her2', 'egfr', 'tgfb', 'stat3', 'tnfa')
+
+# check if I get similar clustering as Gatza paper:
+pdf('gatzacheck.pdf')
+#pdf('gatzachecknoflip.pdf')
+heatmap.2(crgatzametalist, trace='none',scale='none', col=matlab.like, cexRow=1)
+#heatmap.2(crgatzametalist[gatzaord,], trace='none',scale='none', col=matlab.like, cexRow=1, dendrogram='none', Rowv=F)
+ord = hclust(dist(crgatzametalist))
+dend = as.dendrogram(ord)
+dend = reorder(dend, rowMeans(crgatzametalist))
+#ord = rev(ord)
+heatmap.2(gatzacor, trace='none',scale='none', col=matlab.like, cexRow=1, main='pearson', Rowv=dend, Colv=dend)
+heatmap.2(gatzacor2, trace='none',scale='none', col=matlab.like, cexRow=1, main='spearman', Rowv=dend, Colv=dend)
+#heatmap.2(gatzacor[gatzaord,gatzaord], trace='none',scale='none', col=matlab.like, cexRow=1, dendrogram='none', Rowv=F, Colv=F)
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###############################################################################
+## Gatza and BMI metagenes in ICGC
 
 ## make metagene with Gatza pathways in ICGC data samples:
 gatzametalist = list()
@@ -1086,10 +1076,12 @@ bmicorstd = cor(t(crstdmat), crclin$bmi, method = "spearman")
 colnames(bmicorstd) = "correlation"
 
 ## The values didn't have any difference in the results
-
 summary(bmicor)
+summary(bmicorstd)
 
-## The highest correlation of the genes with BMI was 0.41721 in Creighton data
+# Do some scrambling of the data
+mc <- Mclust(bmicor,2)
+
 
 ###############################################################################
 ## UCEC DEG stuff
@@ -1112,9 +1104,10 @@ ucecadjoblist = rownames(adjucecdegs)
 datmat = t(UCEC)
 datmat = datmat[ucecoblist,]
 datmatadj = datmat[ucecadjoblist,]
-datmat = t(apply(datmat, 1, function(x) (x-mean(x))/sd(x)))
-datmatadj = t(apply(datmatadj, 1, function(x) (x-mean(x))/sd(x)))
+datmat    = standardise_data(datmat)
+datmatadj = standardise_data(datmatadj)
 
+# see log for why I'm flipping this metagene, but not the adjusted metagene
 ucecsvd = svd(datmat)
 ucecmeta = ucecsvd$v[,1]
 ucecmeta = rank(ucecmeta)/length(ucecmeta)
@@ -1126,17 +1119,63 @@ ucecadjmeta = ucecadjsvd$v[,1]
 ucecadjmeta = rank(ucecadjmeta)/length(ucecadjmeta)
 ucecadjord = order(ucecadjmeta)
 
-datmat[datmat > 3] = 3
-datmat[datmat < -3] = -3
-datmatadj[datmatadj > 3] = 3
-datmatadj[datmatadj < -3] = -3
-
 maintxt = "UCEC unadjusted metagene"
 maintxt2 = "UCEC adjusted metagene"
 
 pdf('ucecmeta.pdf')
 metaplot3(datmat, ucecmeta, datbmi, name=maintxt)
 metaplot3(datmatadj, ucecadjmeta, datbmi, name=maintxt2)
+dev.off()
+
+# UCEC metagenes are both showing "dose-dependent" response
+# (normal < overweight < obese).
+
+# make transformation matrix:
+ucecrawtransmat = diag(1/ucecsvd$d) %*% t(ucecsvd$u)
+ucecadjtransmat = diag(1/ucecadjsvd$d) %*% t(ucecadjsvd$u)
+
+# Try it on ICGC data first, then adjust the oblist for Creighton data:
+tmp = paste(cancertypes,'bmi',sep='')
+
+pdf('ucecicgc.pdf')
+check_data(datlist=cancertypes, bmilist=tmp, genelist=ucecoblist, transmat=ucecrawtransmat, log=T, flip=T, name='UCEC metagene')
+dev.off()
+
+pdf('ucecadjicgc.pdf')
+check_data(datlist=cancertypes, bmilist=tmp, genelist=ucecadjoblist, transmat=ucecadjtransmat, log=T, flip=F, name='UCEC adjusted metagene')
+dev.off()
+
+# seems like all the cancer types (except BLCA overweight samples) correlate
+# with the UCEC obesity-associated genes
+
+# adjust the oblists for Creighton data and check in the Creighton data (I
+# don't think it'll work though)
+crucecoblist    = ucecoblist[which(ucecoblist %in% rownames(cr_symmat))]
+crucecadjoblist = ucecadjoblist[which(ucecadjoblist %in% rownames(cr_symmat))]
+
+# make transformation matrix with adjusted metagenes
+datmat = t(UCEC)
+datmat = datmat[crucecoblist,]
+datmat    = standardise_data(datmat)
+datmatsvd  = svd(datmat)
+
+datmatadj = datmat[crucecadjoblist,]
+datmatadj = standardise_data(datmatadj)
+datmatadjsvd = svd(datmatadj)
+
+crucecrawtransmat = diag(1/ucecsvd$d) %*% t(ucecsvd$u)
+crucecadjtransmat = diag(1/ucecadjsvd$d) %*% t(ucecadjsvd$u)
+
+datmat = cr_symmat[crucecoblist,]
+datmat = standardise_data(datmat, log=F)
+tmpsvd = t(ucecrawtransmat %*% datmat)
+
+datmatadj = cr_symmat[crucecadjoblist,]
+datmatadj = standardise_data(datmatadj, log=F)
+tmpsvd2 = t(ucecadjtransmat %*% datmatadj)
+
+pdf('ucecmetacr.pdf')
+
 dev.off()
 
 
@@ -1151,8 +1190,29 @@ dev.off()
 
 
 
-###############################################################################
-## Methylation stuff
+################################################################################# Methylation stuff
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

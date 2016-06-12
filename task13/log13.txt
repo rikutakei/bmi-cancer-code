@@ -90,10 +90,23 @@ Got DEGs from the UCEC data:
 	- The metagene made from the genes with significant unadjusted p-value had to be flipped so the scores were gong in the same direction as the gene expression
 	- metagene from adjusted p-values didn't need to be flipped, as they were already going in the same direction
 
+======================================================================
 
+7 June 2016
 
+----------------------------------------------------------------------
 
+UCEC metagenes are both showing "dose-dependent" response (normal < overweight < obese) in the UCEC data.
 
+Checked it in ICGC cancer data, and it seems like all the cancer types (except BLCA overweight samples) correlate with the UCEC obesity-associated genes
+
+TODO:
+	1. Re-do the metagene direction stuff
+	2. Do the Gatza pathway correlation stuff with the MATLAB colour scheme
+	3. Scramble the BMI data and find the right cut-off values for the genes
+	that are correlating with BMI
+	4. "Play-around" with mclust stuff, using the correlation of genes with BMI
+	values (exploring the mixed distribution stuff...?)
 
 
 

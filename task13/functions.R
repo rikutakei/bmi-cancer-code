@@ -115,3 +115,30 @@ metaplot3 = function(x, meta, bmi, name = '') {
 	txt2 = summary(lm(meta~bmi$bmi))$coef[2,4]
 	legend('bottomright', bty='n', legend = c(as.expression(bquote(R^2 == .(format(txt, digits = 4)))), as.expression(bquote(p == .(format(txt2, digits=4))))))
 }
+
+# Function to check the given metagene in a list of data.
+# You need to give a list of the variable names of the data you want to check
+# your metagene in.
+# genelist should contain the list of genes used to create the transformation
+# matrix, and the transmat is the transformation matrix.
+# If you want to flip the metagene, then set the flip to TRUE
+# This function is designed for a list of ICGC data, but I guess it can work
+# for other cancer data as well
+check_data = function(datlist, bmilist, genelist, transmat, log=T, flip=F, name='') {
+	for (i in 1:length(datlist)) {
+		testdat = t(get(datlist[i]))
+		mat = testdat[genelist,]
+		mat = standardise_data(mat, log=log)
+		bmi = get(bmilist[i])
+		tmpsvd = t(transmat %*% mat)
+		tmpsvd = tmpsvd[,1]
+		tmpsvd = rank(tmpsvd)/length(tmpsvd)
+		if(flip) {
+			tmpsvd = 1-tmpsvd
+		}
+		main = paste(name, '(')
+		main = paste(main, datlist[i], sep = '')
+		main = paste(main, ')', sep = '')
+		metaplot3(mat, tmpsvd, bmi, name = main)
+	}
+}
