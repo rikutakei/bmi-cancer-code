@@ -108,18 +108,26 @@ TODO:
 	4. "Play-around" with mclust stuff, using the correlation of genes with BMI
 	values (exploring the mixed distribution stuff...?)
 
+======================================================================
 
+14 June 2016
 
+----------------------------------------------------------------------
 
+Did the metagene direction check with MATLAB colour to see if the metagenes are correlating as Gatza et al have shown in their paper
+	- The pathways didn't really correlate like in their paper
 
+Downloaded Gatza's original data and checked it in their dataset
+	- just used hgu133a data first
 
+Found that the pathway metagene shows better, and more similar clustering when the metagenes are generated from the non-standardised (raw) data, but not from the standardised data
 
+======================================================================
 
+15 June 2016
 
+----------------------------------------------------------------------
 
-
-
-
-
-
-
+REDO THE METAGENE FLIP STUFF!!!
+	- find the correlation value of the metagene with its corresponding genes and decide whether to flip it or not
+	- make heatmap.2x with the genes, and have the associated gene on the row bar with the metagene

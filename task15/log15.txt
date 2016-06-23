@@ -1,0 +1,12 @@
+===============================================================================
+
+23 June 2016
+
+-------------------------------------------------------------------------------
+
+The Gatza pathway stuff wasn't looking good in the Creighton data, so going to try the same thing on FM and Cris Print's data
+
+Downloaded Cris' data and removed the HG-U133_Plus_2 stuff from the filenames.
+
+
+

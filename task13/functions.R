@@ -142,3 +142,55 @@ check_data = function(datlist, bmilist, genelist, transmat, log=T, flip=F, name=
 		metaplot3(mat, tmpsvd, bmi, name = main)
 	}
 }
+
+# Function to make a set of colour for heatmap.2x
+make_col = function(values, continuous = T) {
+	if (continuous) {
+		col = bluered(length(values))[rank(values)]
+		return(col)
+	} else {
+		u = sort(unique(values))
+		if (length(u) > 8) {
+			print('There were too many values')
+			return()
+		}
+		else {
+			col = values
+			brewercol = brewer.pal(length(u), "Set2")
+			for (i in 1:length(col)) {
+				for(j in 1:length(u)) {
+					if(is.na(col[i])){
+						col[i] = "#FFFFFF"
+						break()
+					}
+					if (col[i] == u[j]) {
+						col[i] = brewercol[j]
+						break()
+					}
+				}
+			}
+		}
+		return(col)
+	}
+}
+
+# Function to plot metagenes made from raw and standardised data:
+plot_raw_vs_std <- function (dat, pathways, main='') {
+	for (i in 1:length(pathways)) {
+		gene = get(pathways[i])
+		mat = cr_symmat[gene,]
+		rawsvd = svd(mat)
+		rawmeta = rank(rawsvd$v[,1])/ncol(mat)
+
+		stdmat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
+		stdsvd = svd(stdmat)
+		stdmeta = rank(stdsvd$v[,1])/ncol(stdmat)
+
+		txt = paste(main, '(')
+		txt = paste(txt, pathways[i], sep='')
+		txt = paste(txt, ')', sep='')
+		plot(stdmeta, rawmeta, main=txt)
+	}
+}
+
+
