@@ -50,7 +50,7 @@ cris_raw = ReadAffy(filenames = files)
 cris_raw = rma(cris_raw) ## RMA normalise the data
 cris_raw = exprs(cris_raw) ## change the format into matrix
 
-crisclin = read.csv('./clindata/crisclin.csv', sep=',', header=T)
+crisclin = read.csv('./clindata/crisclin2.csv', sep=',', header=T)
 
 cris_symmat = cris_raw
 tmpgenes = mapIds(hgu133plus2.db, keys = rownames(cris_symmat), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')

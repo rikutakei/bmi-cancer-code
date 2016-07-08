@@ -165,6 +165,69 @@ pdf('pdf/fmgatzarawvsstdmeta.pdf')
 plot_raw_vs_std(fm_symmat, paths, main='Fuentes-Mattei')
 dev.off()
 
+# make data matrix for the heatmap:
+matheat = fm_symmat[checkgene,]
+matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+matheat[matheat < -3] = -3
+matheat[matheat > 3] = 3
+
+# make row colours for heatmap
+tmpcol = c('blue', 'red', 'white')
+ER = make_col(as.vector(fmclin$characteristics..ER_status), continuous=F, colours = tmpcol)
+PR = make_col(as.vector(fmclin$characteristics..PR_status), continuous=F, colours = tmpcol)
+HER2 = make_col(as.vector(fmclin$HER2.Status), continuous=F, colours = tmpcol)
+tmpcol = brewer.pal(3, 'YlOrRd')
+Grade = make_col(as.vector(fmclin$BMNgrd), continuous=F, colours = tmpcol)
+
+col = rbind(ER = ER, PR = PR, HER2 = HER2, Grade = Grade)
+
+mgflip = c('bcat_probes', 'egfr_probes', 'er_probes', 'her2_probes', 'myc_probes', 'pr_probes', 'ras_probes', 'src_probes', 'tnfa_probes')
+
+pdf('pdf/gatzametadirectionfm.pdf')
+fmgatzametalist = list()
+fmgatzametacor = vector()
+for (i in 1:length(paths)) {
+	gene = get(paths[i])
+	mat = fm_symmat[gene,]
+	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
+	mat[mat < -3] = -3
+	mat[mat > 3] = 3
+	tmpsvd = svd(mat)
+	tmpmeta = rank(tmpsvd$v[,1])/ncol(mat)
+	if (paths[i] %in% mgflip) {
+		tmpmeta = 1-tmpmeta
+	}
+	ord = order(tmpmeta)
+	#heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=paths[i], cexRow=1.0)
+	col1 = bluered(length(tmpmeta))[rank(tmpmeta)]
+	col2 = bluered(length(tmpmeta))[rank(fm_symmat[checkgene[i],])]
+	tmpcol = rbind(col2, col, meta=col1)
+	txt = checkgene[i]
+	rownames(tmpcol)[1] = txt
+	heatmap.2x(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = tmpcol[,ord], Colv=NA, main=paths[i], cexRow=1.0)
+	fmgatzametalist[[i]] = tmpmeta
+	cor = cor(tmpmeta, fm_symmat[checkgene[i],])
+	fmgatzametacor = c(fmgatzametacor, cor)
+}
+fmgatzametalist = as.data.frame(fmgatzametalist)
+colnames(fmgatzametalist) = gsub('_probes', '', paths)
+fmgatzametalist = t(as.matrix(fmgatzametalist))
+heatmap.2x(fmgatzametalist, trace='none',scale='none', col='bluered', ColSideColors = col, main='All Gatza Pathway Metagenes in FM data', cexRow=1.0)
+names(fmgatzametacor) = paths
+dev.off()
+
+gatzacor = cor(t(fmgatzametalist), method='pearson')
+gatzacor2 = cor(t(fmgatzametalist), method='spearman')
+
+# check if I get similar clustering as Gatza paper:
+pdf('pdf/gatzacheckfm.pdf')
+heatmap.2x(fmgatzametalist, trace='none',scale='none', col=matlab.like, ColSideColors = col, cexRow=1)
+ord = hclust(dist(fmgatzametalist))
+dend = as.dendrogram(ord)
+dend = reorder(dend, rowMeans(fmgatzametalist))
+heatmap.2(gatzacor, trace='none',scale='none', col=matlab.like, cexRow=1, main='pearson', Rowv=dend, Colv=dend)
+heatmap.2(gatzacor2, trace='none',scale='none', col=matlab.like, cexRow=1, main='spearman', Rowv=dend, Colv=dend)
+dev.off()
 
 ###############################################################################
 ## Gatza metagene in Cris Print's breast cancer data:
@@ -181,8 +244,16 @@ matheat[matheat < -3] = -3
 matheat[matheat > 3] = 3
 
 # make row colours for heatmap
-col = make_col(as.vector(crisclin$ER.status), continuous=F)
-col = rbind(ER = col, PR = make_col(as.vector(crisclin$PgR.status), continuous=F),  LN = make_col(as.vector(crisclin$LN.status), continuous=F),  Grade = make_col(as.vector(crisclin$Grade), continuous=F))
+tmpcol = c('blue', 'red', 'white')
+ER = make_col(as.vector(crisclin$ER.status), continuous=F, colours = tmpcol)
+PR = make_col(as.vector(crisclin$PgR.status), continuous=F, colours = tmpcol)
+LN = make_col(as.vector(crisclin$LN.status), continuous=F, colours = tmpcol)
+tmpcol = brewer.pal(3, 'YlOrRd')
+Grade = make_col(as.vector(crisclin$Grade), continuous=F, colours = tmpcol)
+tmpcol = brewer.pal(6, 'Dark2')
+SubType = make_col(as.vector(crisclin$subtype), continuous=F, colours = tmpcol)
+
+col = rbind(ER = ER, PR = PR, LN = LN, Grade = Grade, SubType = SubType)
 
 mgflip = c('bcat_probes', 'e2f1_probes', 'egfr_probes', 'ifng_probes', 'p63_probes', 'pr_probes', 'ras_probes', 'stat3_probes', 'tgfb_probes')
 
@@ -227,8 +298,8 @@ gatzaord = c('er', 'pr', 'p53', 'bcat', 'e2f1', 'pi3k', 'myc', 'ras', 'ifna', 'i
 # check if I get similar clustering as Gatza paper:
 pdf('pdf/gatzacheckcris.pdf')
 #pdf('pdf/gatzachecknoflip.pdf')
-heatmap.2(crisgatzametalist, trace='none',scale='none', col=matlab.like, cexRow=1)
-heatmap.2(crisgatzametalist[gatzaord,], trace='none',scale='none', col=matlab.like, cexRow=1, dendrogram='none', Rowv=F)
+heatmap.2x(crisgatzametalist, trace='none',scale='none', col=matlab.like, ColSideColors = col, cexRow=1)
+#heatmap.2x(crisgatzametalist[gatzaord,], trace='none',scale='none', col=matlab.like, ColSideColors = col, cexRow=1)
 ord = hclust(dist(crisgatzametalist))
 dend = as.dendrogram(ord)
 dend = reorder(dend, rowMeans(crisgatzametalist))

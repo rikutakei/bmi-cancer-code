@@ -144,7 +144,7 @@ check_data = function(datlist, bmilist, genelist, transmat, log=T, flip=F, name=
 }
 
 # Function to make a set of colour for heatmap.2x
-make_col = function(values, continuous = T) {
+make_col = function(values, continuous = T, colours = c()) {
 	if (continuous) {
 		col = bluered(length(values))[rank(values)]
 		return(col)
@@ -154,9 +154,25 @@ make_col = function(values, continuous = T) {
 			print('There were too many values')
 			return()
 		}
+		else if (length(colours) > 0){
+			col = values
+			brewercol = colours
+			for (i in 1:length(col)) {
+				for(j in 1:length(u)) {
+					if(is.na(col[i])){
+						col[i] = "#FFFFFF"
+						break()
+					}
+					if (col[i] == u[j]) {
+						col[i] = brewercol[j]
+						break()
+					}
+				}
+			}
+		}
 		else {
 			col = values
-			brewercol = brewer.pal(length(u), "Set2")
+			brewercol = brewer.pal(length(u), "Set1")
 			for (i in 1:length(col)) {
 				for(j in 1:length(u)) {
 					if(is.na(col[i])){
@@ -178,7 +194,7 @@ make_col = function(values, continuous = T) {
 plot_raw_vs_std <- function (dat, pathways, main='') {
 	for (i in 1:length(pathways)) {
 		gene = get(pathways[i])
-		mat = cr_symmat[gene,]
+		mat = dat[gene,]
 		rawsvd = svd(mat)
 		rawmeta = rank(rawsvd$v[,1])/ncol(mat)
 
@@ -193,4 +209,22 @@ plot_raw_vs_std <- function (dat, pathways, main='') {
 	}
 }
 
+# Function to make a heatmap of metagenes
+metamap <- function (metalist, col, main='') {
+	
+heatmap.2x(metalist, trace='none',scale='none', col='bluered', ColSideColors = col, Colv=NA, main=main, cexRow=1.0)
+heatmap.2x(metalist, trace='none',scale='none', col=matlab.like(ncol(metalist)), ColSideColors = col, Colv=NA, main=main, cexRow=1.0)
+
+c = cor(t(metalist), method = 'spearman')
+c2 = cor(t(metalist), method = 'pearson')
+
+txt = paste("Spearman correlation of\n", main, sep='')
+heatmap.2x(c, trace='none',scale='none', col='bluered', main=txt, cexRow=1.0)
+heatmap.2x(c, trace='none',scale='none', col=matlab.like(ncol(metalist)),  main=txt, cexRow=1.0)
+
+txt = paste("Pearson correlation of\n", main, sep='')
+heatmap.2x(c2, trace='none',scale='none', col='bluered', main=txt, cexRow=1.0)
+heatmap.2x(c2, trace='none',scale='none', col=matlab.like(ncol(metalist)),  main=txt, cexRow=1.0)
+
+}
 

@@ -131,3 +131,78 @@ Found that the pathway metagene shows better, and more similar clustering when t
 REDO THE METAGENE FLIP STUFF!!!
 	- find the correlation value of the metagene with its corresponding genes and decide whether to flip it or not
 	- make heatmap.2x with the genes, and have the associated gene on the row bar with the metagene
+
+===============================================================================
+
+23 June 2016
+
+-------------------------------------------------------------------------------
+
+The Gatza pathway stuff wasn't looking good in the Creighton data, so going to try the same thing on FM and Cris Print's data
+
+Downloaded Cris' data and removed the HG-U133_Plus_2 stuff from the filenames.
+
+Got the clinical data for 55 samples from Mik
+
+===============================================================================
+
+28 June 2016
+
+-------------------------------------------------------------------------------
+
+In both Cris' and FM's data, the Gatza metagenes showed similar correlation/clustering as in the original Gatza paper (see gatzameta.R).
+	- quality of Creighton's data might have been shit
+
+Checked the association of Creighton's obesity-associated genes with BMI in Cris' data, using transformation matrix made from Creighton data (see crismeta.R)
+	- Again, no association with BMI
+
+Need to see whether the BMI metagenes correlated with any of the Gatza pathway metagenes
+	- Creighton's data didn't cluster the metagenes as well as Cris' or FM's data, so I'm doing it in Cris' data for now.
+
+First, need to check for the direction of BMI metagenes in Cris' data, so that all the BMI metagenes are facing the right way.
+	- Like in Creighton's data, the seventh metagene had to be flipped.
+
+Combine the BMI metagenes with the Gatza pathway metagenes and make a correlation matrix.
+	- seems like none of the BMI metagenes are correlating/clustering together with any of the Gatza pathway metagenes
+
+===============================================================================
+
+7 July 2016
+
+-------------------------------------------------------------------------------
+
+Splitted Cris' data into Auckland A and B, and plotted it with the metagenes created earlier
+	- note that the metagenes weren't created separately - they were made using the whole dataset, ranked as a whole, then splitted into different cohorts
+	- there is a clear activation of ER/PR/HER2 and deactivation of myc/ras/bcat in auckland A cohort
+	  - opposite reults in auckland B cohort (but way more noisier than auckland A)
+
+Looking at DEG in Cris' BC data now
+	- started looking at the DEGs using both raw data and standardised data
+	  - see if there's any difference in the result...
+
+===============================================================================
+
+8 July 2016
+
+-------------------------------------------------------------------------------
+
+Did DEGs in both raw and standardised data (366 and 377 genes respectively)
+
+Checked the result in both raw and standardised data for both obesity-associated genes (Identified from raw and standardised data)
+	- Both genes were only significant when checked in the standardised data, but not in the raw data
+
+Going to make transformation matrix with both raw and std obesity-associated genes in Cris' data (standardised)
+	- these genes were converted into gene symbols and checked to see if they are present in both Cris' and ICGC data
+
+The common genes were still associated with BMI in Cris' data, but the association seems to be weaker than the gene probe IDs
+
+
+
+
+
+
+
+
+
+
+
