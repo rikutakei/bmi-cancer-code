@@ -1,0 +1,86 @@
+===============================================================================
+
+12 July 2016
+
+-------------------------------------------------------------------------------
+
+Starting on making Gatza's results
+
+Data were downloaded from GEO and the GSE IDs were:
+	- GSE1456 GSE1561 GSE2034 GSE3494 GSE3744 GSE4922 GSE5460 GSE5764 GSE6596
+	  - 6 of these had hgu133a data
+
+Only the hgu133a samples were used to make the results from the Gatza paper
+	- (how many samples?)
+
+Checked the direction of the metagenes in Gatza's dataset
+	- Initially checked the direction using both the corresponding genes and the correlation of the metagene with that gene
+		- The heatmap of the pathway metagenes didn't look like the figure in Gatza paper, so decided to flip the metagenes based on their figure
+
+===============================================================================
+
+13 July 2016
+
+-------------------------------------------------------------------------------
+
+Gatza's materials and methods section says that they used mas5 normalisation method, so I am going to try this and see if I'll get the same results
+	- still can't get the same heatmap as their figure...
+		- (have tried with/without ranking metagene, svd on raw/std data, etc.)
+	- maybe the metagene flipping is wrong...?
+
+Might have to choose the flipping directions by "copying" their figure...?
+
+===============================================================================
+
+14 July 2016
+
+-------------------------------------------------------------------------------
+
+Forgot to log2 the mas5 normalised data
+	- log2 the data, and see if it changes anything
+
+Close to their results using mas5 normalised, log2, and no standardisation of the data
+
+Looking back at Gatza's supplementary methods section, they have used Bayesian Factor Regression Model to normalise the data
+	- since the data were all from independent studies, they had to 'normalise' the data to remove the cohort effect
+		- Tom said to use 'ComBat' to remove the cohort (in sva package)
+
+===============================================================================
+
+15 July 2016
+
+-------------------------------------------------------------------------------
+
+Re-trying the gatza pathway direction/metagene stuff after adjusting for batch effects (using ComBat)
+	- To adjust for the batch effect, I need to figure out which sample came from which data set, then make a model matrix out of that data
+
+===============================================================================
+
+18 July 2016
+
+-------------------------------------------------------------------------------
+
+Adjusted for the batch effect of the hgu133a microarray data using ComBat
+
+Realised that the batch adjustment standardises the data for you (I think...)
+
+===============================================================================
+
+19 July 2016
+
+-------------------------------------------------------------------------------
+
+Need to import each HGU133A dataset individually and RMA/MAS5 normalise the data, then combine them and correct for the batch effect
+
+Also, use both probit (pnorm(scale(x))) and rank-based approach to rank the metagene scores
+
+
+
+
+
+
+
+
+
+
+

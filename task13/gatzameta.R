@@ -74,6 +74,7 @@ col = rbind(ER = col, PR = make_col(as.vector(crclin$PRstatus), continuous=F), H
 
 pdf('pdf/gatzametadirection.pdf')
 crgatzametalist = list()
+crgatzametalist = list()
 for (i in 1:length(paths)) {
 	gene = get(paths[i])
 	mat = cr_symmat[gene,]

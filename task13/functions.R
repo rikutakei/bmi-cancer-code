@@ -212,19 +212,19 @@ plot_raw_vs_std <- function (dat, pathways, main='') {
 # Function to make a heatmap of metagenes
 metamap <- function (metalist, col, main='') {
 	
-heatmap.2x(metalist, trace='none',scale='none', col='bluered', ColSideColors = col, Colv=NA, main=main, cexRow=1.0)
-heatmap.2x(metalist, trace='none',scale='none', col=matlab.like(ncol(metalist)), ColSideColors = col, Colv=NA, main=main, cexRow=1.0)
+	heatmap.2x(metalist, trace='none',scale='none', col='bluered', ColSideColors = col, Colv=NA, main=main, cexRow=1.0)
+	heatmap.2x(metalist, trace='none',scale='none', col=matlab.like(ncol(metalist)), ColSideColors = col, Colv=NA, main=main, cexRow=1.0)
 
-c = cor(t(metalist), method = 'spearman')
-c2 = cor(t(metalist), method = 'pearson')
+	c = cor(t(metalist), method = 'spearman')
+	c2 = cor(t(metalist), method = 'pearson')
 
-txt = paste("Spearman correlation of\n", main, sep='')
-heatmap.2x(c, trace='none',scale='none', col='bluered', main=txt, cexRow=1.0)
-heatmap.2x(c, trace='none',scale='none', col=matlab.like(ncol(metalist)),  main=txt, cexRow=1.0)
+	txt = paste("Spearman correlation of\n", main, sep='')
+	heatmap.2x(c, trace='none',scale='none', col='bluered', main=txt, cexRow=1.0)
+	heatmap.2x(c, trace='none',scale='none', col=matlab.like(ncol(metalist)),  main=txt, cexRow=1.0)
 
-txt = paste("Pearson correlation of\n", main, sep='')
-heatmap.2x(c2, trace='none',scale='none', col='bluered', main=txt, cexRow=1.0)
-heatmap.2x(c2, trace='none',scale='none', col=matlab.like(ncol(metalist)),  main=txt, cexRow=1.0)
+	txt = paste("Pearson correlation of\n", main, sep='')
+	heatmap.2x(c2, trace='none',scale='none', col='bluered', main=txt, cexRow=1.0)
+	heatmap.2x(c2, trace='none',scale='none', col=matlab.like(ncol(metalist)),  main=txt, cexRow=1.0)
 
 }
 
