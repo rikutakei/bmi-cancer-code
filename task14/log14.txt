@@ -72,7 +72,56 @@ Realised that the batch adjustment standardises the data for you (I think...)
 
 Need to import each HGU133A dataset individually and RMA/MAS5 normalise the data, then combine them and correct for the batch effect
 
+Need to check if the data actually gets standardised after the batch correction
+
 Also, use both probit (pnorm(scale(x))) and rank-based approach to rank the metagene scores
+
+===============================================================================
+
+20 July 2016
+
+-------------------------------------------------------------------------------
+
+Need to make a function that takes in MAS5 or RMA normalised data and do the metagene analysis.
+	- it should allow toggling of probit or rank-based approach
+	- should allow standardising or not
+	- flipping/direction of metagene should be decided before the function call and given to the function as an argument
+
+===============================================================================
+
+27 July 2016
+
+-------------------------------------------------------------------------------
+
+I have been using read.csv instead of readLines, which meant that I was losing the very first gene in the list of probes for each of the pathways
+
+===============================================================================
+
+1 August 2016
+
+-------------------------------------------------------------------------------
+
+Make transformation matrix from either the RMA or MAS5 normalised Gatza data, and transfer it to Creighton, FM, Cris, and TCGA data
+	- Use the metagene directions from Gatza result
+
+Just realised that I was standardising the data on per-pathway-basis, rather than standardising the whole data first, then pulling out the relvant genes
+	- May need to re-do the whole thing (including other metagene stuff)
+
+===============================================================================
+
+2 August 2016
+
+-------------------------------------------------------------------------------
+
+Need to decide where to make the transformation matrix for the obesity genes
+	- for now, I've made the transformation matrix in the Gatza dataset
+		- Need to check for the direction of the obesity metagenes in the data set in which the transformation matrix is made in
+
+
+
+
+
+
 
 
 

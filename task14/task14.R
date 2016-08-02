@@ -79,45 +79,70 @@ source('http://faculty.ucr.edu/~tgirke/Documents/R_BioCond/My_R_Scripts/overLapp
 ## Use data from Gatza paper, and see if I get the same results as in their
 # paper, using svd
 
-files = readLines('./raw/gatza/hgu133a/files.txt')
-files = paste('./raw/gatza/hgu133a/', files, sep='')
-gatzaraw = ReadAffy(filenames = files)
-gatzarawrma = rma(gatzaraw) ## RMA normalise the data
-gatzarawmas5 = mas5(gatzaraw) ## MAS5 normalise the data
-gatzarawrma = exprs(gatzarawrma) ## change the format into matrix
-gatzarawmas5 = exprs(gatzarawmas5) ## change the format into matrix
-gatzarawmas5 = log2(gatzarawmas5) ## need to log2 the data, as in their paper
-dim(gatzarawrma) # 22283 by 1060
-dim(gatzarawmas5) # 22283 by 1060
-
 # Import the sample names included in different GSE experiments:
 files = readLines('./raw/gatza/sample_names/files.txt')
 files = paste('./raw/gatza/sample_names/', files, sep='')
 
-sample_names = c()
-batch = c()
+sample_list = list()
 for (i in 1:length(files)) {
 	tmp = readLines(files[i])
 	txt = gsub('.*/', '', files[i])
 	txt = gsub('_.*', '', txt)
-	sample_names = c(sample_names, tmp)
-	tmpbatch = rep(txt, length(tmp))
-	batch = c(batch, tmpbatch)
+	sample_list[[i]] = tmp
+	names(sample_list)[i] = txt
 }
-batch = cbind(sample_names, batch)
-colnames(batch) = c("samples", "batch")
-rownames(batch) = gsub('.gz', '', batch[,1])
+sample_list = lapply(sample_list, function(x) gsub('.gz','', x))
 
-# Only interested in the samples that are from HGU133A microarray chip:
-batch = batch[which(rownames(batch) %in% colnames(gatzarawmas5)),]
+# Import the hgu133a samples:
+files = readLines('./raw/gatza/hgu133a/files.txt')
+sample_list = lapply(sample_list, function(x) x[which(x %in% files)])
+
+# remove GSE dataset with no HGU133A dataset:
+sample_list = sample_list[lapply(sample_list, length) > 0]
+sample_list = lapply(sample_list, function(x) paste('./raw/gatza/hgu133a/', x, sep=''))
+
+# import each dataset separately
+rawlist = sample_list
+rawlist = lapply(rawlist, function(x) ReadAffy(filenames = x))
+
+# RMA normalise:
+rmalist = lapply(rawlist, function(x) rma(x))
+rmalist = lapply(rmalist, function(x) exprs(x))
+
+# MAS5 normalise:
+mas5list = lapply(rawlist, function(x) mas5(x))
+mas5list = lapply(mas5list, function(x) exprs(x))
+mas5list = lapply(mas5list, function(x) log2(x))
+
+# combine the independently normalised data into a single matrix:
+gatzarma = do.call(cbind, rmalist)
+gatzamas5 = do.call(cbind, mas5list)
+
+dim(gatzarma) # 22283 by 1060
+dim(gatzamas5) # 22283 by 1060
+
+# generate batch info:
+batch = sample_list
+batch = lapply(batch, function(x) gsub('./raw/gatza/hgu133a/', '' , x))
+batch = as.vector(unlist(batch))
+groups = c()
+for (i in 1:length(sample_list)) {
+	tmp = rep(names(sample_list)[[i]], length(sample_list[[i]]))
+	groups = c(groups, tmp)
+}
+batch = cbind(batch, groups)
 
 # Correct for the batch effect:
 # First make a model matrix for the different batches:
 mod = model.matrix(~1, data=as.data.frame(batch))
 
 # Adjust for batch effect:
-gatzabatchrma = ComBat(dat = gatzarawrma, batch=batch[,2], mod=mod)
-gatzabatchmas5 = ComBat(dat = gatzarawmas5, batch=batch[,2], mod=mod)
+gatzabatchrma = ComBat(dat = gatzarma, batch=batch[,2], mod=mod)
+gatzabatchmas5 = ComBat(dat = gatzamas5, batch=batch[,2], mod=mod)
+
+# standardise the data:
+gtrmastd = t(apply(gatzabatchrma, 1, function(x) (x-mean(x))/sd(x)))
+gtmasstd = t(apply(gatzabatchmas5, 1, function(x) (x-mean(x))/sd(x)))
 
 # make a matrix of gene symbols for checking the direction of specific genes
 gatzasymmas5 = gatzabatchmas5
@@ -142,8 +167,7 @@ files = paste('./gatzagenelist/', files, sep='')
 for (i in 1:length(files)) {
 	txt = gsub('./gatzagenelist/','',files[i])
 	txt = gsub('.txt','',txt)
-	genes = read.csv(files[i])
-	genes = as.vector(genes[,1])
+	genes = readLines(files[i])
 	genes = genes[which(genes %in% rownames(gatzaraw))]
 	assign(txt, genes)
 }
@@ -156,98 +180,433 @@ paths
 
 # list of genes related to/representing the pathway:
 checkgene = c('AKT1', 'CTNNB1', 'E2F1', 'EGFR', 'ESR1', 'ERBB2', 'IFNA1', 'IFNG', 'MYC', 'TP53', 'TP63', 'PIK3CA', 'PGR', 'HRAS', 'SRC', 'STAT3', 'TGFB1', 'TNF')
+# template = c(
+# 			   'akt_probes',
+# 			   'bcat_probes',
+# 			   'e2f1_probes',
+# 			   'egfr_probes',
+# 			   'er_probes',
+# 			   'her2_probes',
+# 			   'ifna_probes',
+# 			   'ifng_probes',
+# 			   'myc_probes',
+# 			   'p53_probes',
+# 			   'p63_probes',
+# 			   'pi3k_probes',
+# 			   'pr_probes',
+# 			   'ras_probes',
+# 			   'src_probes',
+# 			   'stat3_probes',
+# 			   'tgfb_probes',
+# 			   'tnfa_probes'
+# 			   )
+
+
+# Show the direction of metagenes:
+# make data matrix for the heatmap:
+# This matrix is only used to visualise the direction of the metagene, and is not used in the creation of metagene or the transformation matrix
+matheat = gatzasymrma[checkgene,]
+matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+matheat[matheat < -3] = -3
+matheat[matheat > 3] = 3
+
+# RMA/Standardised/rank-based
+pdf('pdf/gtrmastdrank.pdf')
+mgfliprma = c(
+			   # 'akt_probes',
+			   'bcat_probes',
+			   'e2f1_probes',
+			   'egfr_probes',
+			   # 'er_probes',
+			   'her2_probes',
+			   'ifna_probes',
+			   'ifng_probes',
+			   # 'myc_probes',
+			   'p53_probes',
+			   'p63_probes',
+			   'pi3k_probes',
+			   'pr_probes',
+			   # 'ras_probes',
+			   # 'src_probes',
+			   'stat3_probes',
+			   'tgfb_probes',
+			   'tnfa_probes'
+			  )
+gtrmametacor1 = gatzaPath(mat = gtrmastd, matheat = matheat, pathlist = paths, flip = mgfliprma, metalist = "gatzametarma", corlist = "gatzacorrma",  rank = T, checkgene = checkgene)
+dev.off()
+
+# RMA/Standardised/probit
+pdf('pdf/gtrmastdprobit.pdf')
+mgfliprma = c( 'bcat_probes', 'er_probes', 'ifna_probes', 'ifng_probes', 'myc_probes', 'pi3k_probes', 'pr_probes', 'ras_probes', 'src_probes', 'tnfa_probes')
+gtrmametacor2 = gatzaPath(mat = gtrmastd, matheat = matheat, pathlist = paths, flip = mgfliprma, metalist = "gatzametarma", corlist = "gatzacorrma",  rank = F, checkgene = checkgene)
+dev.off()
+
+# RMA/non-standardised/rank-based
+pdf('pdf/gtrmarank.pdf')
+mgfliprma = c( 'bcat_probes', 'e2f1_probes', 'er_probes', 'ifna_probes', 'ifng_probes', 'myc_probes', 'p53_probes', 'pi3k_probes', 'pr_probes', 'ras_probes')
+gtrmametacor3 = gatzaPath(mat = gatzabatchrma, matheat = matheat, pathlist = paths, flip = mgfliprma, metalist = "gatzametarma", corlist = "gatzacorrma",  rank = T, checkgene = checkgene)
+dev.off()
+
+# RMA/non-standardised/probit
+pdf('pdf/gtrmaprobit.pdf')
+mgfliprma = c( 'bcat_probes', 'e2f1_probes', 'er_probes', 'ifna_probes', 'ifng_probes', 'myc_probes', 'p53_probes', 'pi3k_probes', 'pr_probes', 'ras_probes', 'tgfb_probes')
+gtrmametacor4 = gatzaPath(mat = gatzabatchrma, matheat = matheat, pathlist = paths, flip = mgfliprma, metalist = "gatzametarma", corlist = "gatzacorrma",  rank = F, checkgene = checkgene)
+dev.off()
+
+pdf(file='pdf/rmametaplot.pdf', width=7, height=7)
+	x1 = gtrmametacor1$metagene
+	x2 = gtrmametacor2$metagene
+	x3 = gtrmametacor3$metagene
+	x4 = gtrmametacor4$metagene
+	for (i in 1:nrow(x1)) {
+		main = rownames(x1)[i]
+		plot(x1[i,], x2[i,], main=main, xlab="Std/rank", ylab="Std/probit")
+		plot(x3[i,], x4[i,], main=main, xlab="Non-std/rank", ylab="Non-std/probit")
+		plot(x1[i,], x3[i,], main=main, xlab="Std/rank", ylab="Non-std/rank")
+		plot(x2[i,], x4[i,], main=main, xlab="Std/probit", ylab="Non-std/probit")
+	}
+dev.off()
+
 
 # make data matrix for the heatmap:
 # This matrix is only used to visualise the direction of the metagene, and is not used in the creation of metagene or the transformation matrix
-#matheat = gatzasymrma[checkgene,]
 matheat = gatzasymmas5[checkgene,]
 matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
 matheat[matheat < -3] = -3
 matheat[matheat > 3] = 3
 
-# Show the direction of metagenes:
-#pdf('pdf/gatzarmametadir.pdf')
-pdf('pdf/gatzamas5metadir.pdf')
-mgfliprma = c(
-			   #'akt_probes',
-			   'bcat_probes',
-			   'e2f1_probes',
-			   'egfr_probes',
-			   'er_probes',
-			   'her2_probes',
-			   'ifna_probes',
-			   'ifng_probes',
-			   'myc_probes',
-			   'p53_probes',
-			   #'p63_probes',
-			   'pi3k_probes',
-			   'pr_probes',
-			   'ras_probes',
-			   #'src_probes',
-			   #'stat3_probes',
-			   'tgfb_probes'#,
-			   #'tnfa_probes'
-			   )
+# MAS5/Standardised/rank-based
+pdf('pdf/gtmasstdrank.pdf')
 mgflipmas5 = c(
-			   #'akt_probes',
-			   'bcat_probes',
-			   'e2f1_probes',
-			   'egfr_probes',
-			   'er_probes',
-			   'her2_probes',
+ 			   'akt_probes',
+ 			   'bcat_probes',
+ 			   # 'e2f1_probes',
+			   # 'egfr_probes',
+ 			   # 'er_probes',
+ 			   # 'her2_probes',
 			   'ifna_probes',
-			   'ifng_probes',
-			   'myc_probes',
-			   'p53_probes',
-			   #'p63_probes',
-			   'pi3k_probes',
-			   'pr_probes',
-			   'ras_probes',
-			   #'src_probes',
-			   #'stat3_probes',
-			   'tgfb_probes'#,
-			   #'tnfa_probes'
-			   )
+ 			   'ifng_probes',
+ 			   # 'myc_probes',
+ 			   'p53_probes',
+ 			   'p63_probes',
+ 			   'pi3k_probes',
+ 			   'pr_probes',
+ 			   # 'ras_probes',
+ 			   'src_probes',
+			   'stat3_probes',
+ 			   'tgfb_probes',
+			   'tnfa_probes'
+ 			   )
+gtmas5metacor1 = gatzaPath(mat = gtmasstd, matheat = matheat, pathlist = paths, flip =mgflipmas5, metalist = "gatzametamas5", corlist = "gatzacormas5", rank = T, checkgene = checkgene)
+dev.off()
 
-gatzametalist = list()
-gatzacor = list()
+# MAS5/Standardised/probit
+pdf('pdf/gtmasstdprobit.pdf')
+mgflipmas5 = c( 'bcat_probes', 'egfr_probes', 'er_probes', 'ifna_probes', 'ifng_probes', 'myc_probes', 'p63_probes', 'pr_probes', 'ras_probes', 'stat3_probes', 'tgfb_probes', 'tnfa_probes')
+mgflipmas5 = c(
+ 			   'akt_probes',
+ 			   'bcat_probes',
+ 			   # 'e2f1_probes',
+			   # 'egfr_probes',
+ 			   # 'er_probes',
+ 			   # 'her2_probes',
+			   'ifna_probes',
+ 			   'ifng_probes',
+ 			   # 'myc_probes',
+ 			   'p53_probes',
+ 			   'p63_probes',
+ 			   'pi3k_probes',
+ 			   'pr_probes',
+ 			   # 'ras_probes',
+ 			   'src_probes',
+			   'stat3_probes',
+ 			   'tgfb_probes',
+			   'tnfa_probes'
+ 			   )
+gtmas5metacor2 = gatzaPath(mat = gtmasstd, matheat = matheat, pathlist = paths, flip =mgflipmas5, metalist = "gatzametamas5", corlist = "gatzacormas5",  rank = F, checkgene = checkgene)
+dev.off()
+
+# MAS5/non-standardised/rank-based
+pdf('pdf/gtmasrank.pdf')
+mgflipmas5 = c( 'bcat_probes', 'e2f1_probes', 'er_probes', 'ifna_probes', 'ifng_probes', 'myc_probes', 'p53_probes', 'pi3k_probes', 'pr_probes', 'ras_probes')
+gtmas5metacor3 = gatzaPath(mat = gatzabatchmas5, matheat = matheat, pathlist = paths, flip =mgflipmas5, metalist = "gatzametamas5", corlist = "gatzacormas5",  rank = T, checkgene = checkgene)
+dev.off()
+
+# MAS5/non-standardised/probit
+pdf('pdf/gtmasprobit.pdf')
+mgflipmas5 = c( 'bcat_probes', 'e2f1_probes', 'er_probes', 'myc_probes', 'p53_probes', 'pi3k_probes', 'pr_probes', 'ras_probes')
+gtmas5metacor4 = gatzaPath(mat = gatzabatchmas5, matheat = matheat, pathlist = paths, flip =mgflipmas5, metalist = "gatzametamas5", corlist = "gatzacormas5",  rank = F, checkgene = checkgene)
+dev.off()
+
+pdf(file='pdf/mas5metaplot.pdf', width=7, height=7)
+	x1 = gtmas5metacor1$metagene
+	x2 = gtmas5metacor2$metagene
+	x3 = gtmas5metacor3$metagene
+	x4 = gtmas5metacor4$metagene
+	for (i in 1:nrow(x1)) {
+		main = rownames(x1)[i]
+		plot(x1[i,], x2[i,], main=main, xlab="Std/rank", ylab="Std/probit")
+		plot(x3[i,], x4[i,], main=main, xlab="Non-std/rank", ylab="Non-std/probit")
+		plot(x1[i,], x3[i,], main=main, xlab="Std/rank", ylab="Non-std/rank")
+		plot(x2[i,], x4[i,], main=main, xlab="Std/probit", ylab="Non-std/probit")
+	}
+dev.off()
+
+pdf(file='pdf/combmetaplot.pdf', width=7, height=7)
+	x1 = gtrmametacor1$metagene
+	x2 = gtrmametacor2$metagene
+	x3 = gtrmametacor3$metagene
+	x4 = gtrmametacor4$metagene
+	y1 = gtmas5metacor1$metagene
+	y2 = gtmas5metacor2$metagene
+	y3 = gtmas5metacor3$metagene
+	y4 = gtmas5metacor4$metagene
+	for (i in 1:nrow(x1)) {
+		txt = rownames(x1)[i]
+		main = paste(txt, ' (Std/rank)', sep='')
+		plot(x1[i,], y1[i,], main=main, xlab="rma", ylab="mas5")
+		main = paste(txt, ' (Std/probit)', sep='')
+		plot(x2[i,], y2[i,], main=main, xlab="rma", ylab="mas5")
+		main = paste(txt, ' (Non-std/rank)', sep='')
+		plot(x3[i,], y3[i,], main=main, xlab="rma", ylab="mas5")
+		main = paste(txt, ' (Non-std/probit)', sep='')
+		plot(x4[i,], y4[i,], main=main, xlab="rma/rank/NS", ylab="mas5")
+	}
+dev.off()
+
+###############################################################################
+# Make transformation matrix and apply it to other datasets
+
+# import all the data:
+
+## Creighton et al data:
+
+files = readLines('./raw/creighton/files.txt')
+files = paste('./raw/creighton/', files, sep='')
+crraw = ReadAffy(filenames = files)
+
+crrma = rma(crraw) ## RMA normalise the data
+crrma = exprs(crrma) ## change the format into matrix
+
+crmas = mas5(crraw) ## Mas5 normalise the data
+crmas = exprs(crmas) ## change the format into matrix
+crmas = log2(crmas) ## log2 the data
+
+crstdrma = t(apply(crrma, 1, function(x) (x-mean(x))/sd(x)))
+crstdmas = t(apply(crmas, 1, function(x) (x-mean(x))/sd(x)))
+
+crobsgene = read.csv('./obsgenes/crobsgenes.txt', header=F)
+crobsgene = as.vector(crobsgene[,1])
+
+crclin = read.csv('./clindata/crclin.csv', sep=',', header=T)
+
+crsymrma = crrma
+tmpgenes = mapIds(hgu133a.db, keys = rownames(crsymrma), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+rownames(crsymrma) = tmpgenes
+crsymrma = crsymrma[-(which(is.na(rownames(crsymrma)))),]
+crsymrma = collapseRows(crsymrma, unique(rownames(crsymrma)), unique(rownames(crsymrma)))
+crsymrma = crsymrma$datETcollapsed
+dim(crsymrma) #13031 genes
+
+crsymmas = crmas
+tmpgenes = mapIds(hgu133a.db, keys = rownames(crsymmas), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+rownames(crsymmas) = tmpgenes
+crsymmas = crsymmas[-(which(is.na(rownames(crsymmas)))),]
+crsymmas = collapseRows(crsymmas, unique(rownames(crsymmas)), unique(rownames(crsymmas)))
+crsymmas = crsymmas$datETcollapsed
+dim(crsymmas) #13031 genes
+
+###############################################################################
+## Fuentes-Mattei et al data:
+
+files = readLines('./raw/fuentes-mattei/files.txt')
+files = paste('./raw/fuentes-mattei/', files, sep='')
+fmraw = ReadAffy(filenames = files)
+
+fmrma = rma(fmraw) ## RMA normalise the data
+fmrma = exprs(fmrma) ## change the format into matrix
+
+fmmas = mas5(fmraw) ## Mas5 normalise the data
+fmmas = exprs(fmmas) ## change the format into matrix
+fmmas = log2(fmmas) ## log2 the data
+
+fmstdrma = t(apply(fmrma, 1, function(x) (x-mean(x))/sd(x)))
+fmstdmas = t(apply(fmmas, 1, function(x) (x-mean(x))/sd(x)))
+
+fmobsgene = read.csv('./obsgenes/fmobsgenes.txt', header=T)
+
+fmclin = read.csv('./clindata/fmclin.csv', sep=',', header=T)
+
+fmsymrma = fmrma
+tmpgenes = mapIds(hgu133a.db, keys = rownames(fmsymrma), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+rownames(fmsymrma) = tmpgenes
+fmsymrma = fmsymrma[-(which(is.na(rownames(fmsymrma)))),]
+fmsymrma = collapseRows(fmsymrma, unique(rownames(fmsymrma)), unique(rownames(fmsymrma)))
+fmsymrma = fmsymrma$datETcollapsed
+dim(fmsymrma) #13031 genes
+
+fmsymmas = fmmas
+tmpgenes = mapIds(hgu133a.db, keys = rownames(fmsymmas), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+rownames(fmsymmas) = tmpgenes
+fmsymmas = fmsymmas[-(which(is.na(rownames(fmsymmas)))),]
+fmsymmas = collapseRows(fmsymmas, unique(rownames(fmsymmas)), unique(rownames(fmsymmas)))
+fmsymmas = fmsymmas$datETcollapsed
+dim(fmsymmas) #13031 genes
+
+###############################################################################
+## Cris Print's Breast cancer data:
+
+files = readLines('./raw/cris/files.txt')
+files = paste('./raw/cris/', files, sep='')
+crisraw = ReadAffy(filenames = files)
+
+crisrma = rma(crisraw) ## RMA normalise the data
+crisrma = exprs(crisrma) ## change the format into matrix
+
+crismas = mas5(crisraw) ## Mas5 normalise the data
+crismas = exprs(crismas) ## change the format into matrix
+crismas = log2(crismas) ## log2 the data
+
+crisstdrma = t(apply(crisrma, 1, function(x) (x-mean(x))/sd(x)))
+crisstdmas = t(apply(crismas, 1, function(x) (x-mean(x))/sd(x)))
+
+crisclin = read.csv('./clindata/crisclin2.csv', sep=',', header=T)
+
+crissymrma = crisrma
+tmpgenes = mapIds(hgu133a.db, keys = rownames(crissymrma), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+rownames(crissymrma) = tmpgenes
+crissymrma = crissymrma[-(which(is.na(rownames(crissymrma)))),]
+crissymrma = collapseRows(crissymrma, unique(rownames(crissymrma)), unique(rownames(crissymrma)))
+crissymrma = crissymrma$datETcollapsed
+dim(crissymrma) #13031 genes
+
+crissymmas = crismas
+tmpgenes = mapIds(hgu133a.db, keys = rownames(crissymmas), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+rownames(crissymmas) = tmpgenes
+crissymmas = crissymmas[-(which(is.na(rownames(crissymmas)))),]
+crissymmas = collapseRows(crissymmas, unique(rownames(crissymmas)), unique(rownames(crissymmas)))
+crissymmas = crissymmas$datETcollapsed
+dim(crissymmas) #13031 genes
+
+###############################################################################
+## Import my obesity genes from task 13:
+
+allobsname = c("rawobsgenes","crolgenes","resobsgenes","rescrolgenes", "caobsgenes","cacrolgenes","caresobsgenes","carescrolgenes")
+for (i in 1:length(allobsname)) {
+	txt = paste('./obsgenes/', allobsname[i], sep='')
+	txt = paste(txt, '.txt', sep='')
+	assign(allobsname[i], dget(txt))
+}
+
+###############################################################################
+## Make transformation matrix:
+
+gtrmatransmat = list()
 for (i in 1:length(paths)) {
 	gene = get(paths[i])
-	#mat = gatzabatchrma[gene,]
-	mat = gatzabatchmas5[gene,]
-	#mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
-	tmpsvd = svd(mat)
+	mat = gtrmastd[gene,]
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	gtrmatransmat[[i]] = trans
+	names(gtrmatransmat)[i] = paths[i]
+}
+
+gtmastransmat = list()
+for (i in 1:length(paths)) {
+	gene = get(paths[i])
+	mat = gtmasstd[gene,]
+	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	gtmastransmat[[i]] = trans
+	names(gtmastransmat)[i] = paths[i]
+}
+
+mgfliprma = c( 'bcat_probes', 'e2f1_probes', 'egfr_probes', 'her2_probes', 'ifna_probes', 'ifng_probes', 'p53_probes', 'p63_probes', 'pi3k_probes', 'pr_probes', 'stat3_probes', 'tgfb_probes', 'tnfa_probes')
+
+mgflipmas5 = c( 'akt_probes', 'bcat_probes', 'ifna_probes', 'ifng_probes', 'p53_probes', 'p63_probes', 'pi3k_probes', 'pr_probes', 'src_probes', 'stat3_probes', 'tgfb_probes', 'tnfa_probes')
+
+###############################################################################
+## Apply transformation matrix in Creighton's data
+
+pdf(file='pdf/test.pdf', width=7, height=7)
+test1 = gttransfun(crstdrma, paths, gtrmatransmat, mgfliprma, main = "Creighton data (RMA)")
+test2 = gttransfun(crstdmas, paths, gtmastransmat, mgflipmas5, main = "Creighton data (MAS5)")
+test3 = gttransfun(fmstdrma, paths, gtrmatransmat, mgfliprma, main = "FM data (RMA)")
+test4 = gttransfun(fmstdmas, paths, gtmastransmat, mgflipmas5, main = "FM data (MAS5)")
+test5 = gttransfun(crisstdrma, paths, gtrmatransmat, mgfliprma, main = "Cris data (RMA)")
+test6 = gttransfun(crisstdmas, paths, gtmastransmat, mgflipmas5, main = "Cris data (MAS5)")
+test7 = gttransfun(gtrmastd, paths, gtrmatransmat, mgfliprma, main = "Cris data (RMA)")
+test8 = gttransfun(gtmasstd, paths, gtmastransmat, mgflipmas5, main = "Cris data (MAS5)")
+dev.off()
+
+# make all transformation matrices in Gatza data (for now)
+allmeta = c(paths, allobsname)
+
+allrmatransmat = list()
+for (i in 1:length(allmeta)) {
+	gene = get(allmeta[i])
+	mat = gtrmastd[gene,]
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	allrmatransmat[[i]] = trans
+	names(allrmatransmat)[i] = allmeta[i]
+}
+
+allmastransmat = list()
+for (i in 1:length(allmeta)) {
+	gene = get(allmeta[i])
+	mat = gtmasstd[gene,]
+	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	allmastransmat[[i]] = trans
+	names(allmastransmat)[i] = allmeta[i]
+}
+
+pdf(file='pdf/test2.pdf', width=7, height=7)
+test1 = gttransfun(crstdrma, allmeta, allrmatransmat, mgfliprma, main = "Creighton data (RMA)")
+test2 = gttransfun(crstdmas, allmeta, allmastransmat, mgflipmas5, main = "Creighton data (MAS5)")
+test3 = gttransfun(fmstdrma, allmeta, allrmatransmat, mgfliprma, main = "FM data (RMA)")
+test4 = gttransfun(fmstdmas, allmeta, allmastransmat, mgflipmas5, main = "FM data (MAS5)")
+test5 = gttransfun(crisstdrma, allmeta, allrmatransmat, mgfliprma, main = "Cris data (RMA)")
+test6 = gttransfun(crisstdmas, allmeta, allmastransmat, mgflipmas5, main = "Cris data (MAS5)")
+test7 = gttransfun(gtrmastd, allmeta, allrmatransmat, mgfliprma, main = "Cris data (RMA)")
+test8 = gttransfun(gtmasstd, allmeta, allmastransmat, mgflipmas5, main = "Cris data (MAS5)")
+dev.off()
+
+###############################################################################
+## Quick metagene direction check for the obesity associated genes in Gatza data:
+
+commongenes = table(c(rawobsgenes,crolgenes,resobsgenes,rescrolgenes, caobsgenes,cacrolgenes,caresobsgenes,carescrolgenes))
+commongenes = commongenes[commongenes==8]
+commongenes = names(commongenes)
+
+matheat = gatzabatchrma[commongenes,]
+matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+matheat[matheat < -3] = -3
+matheat[matheat > 3] = 3
+
+pdf('pdf/gtobrma.pdf')
+tmp = gtrmastd
+for (i in 1:length(allobsname)) {
+	genes = get(allobsname[i])
+	tmp = gtrmastd[genes,]
+	tmpsvd = svd(tmp)
 	tmpmeta = tmpsvd$v[,1]
-	#if (paths[i] %in% mgfliprma) {
-	if (paths[i] %in% mgflipmas5) {
-		tmpmeta = 1-tmpmeta
-	}
 	tmpmeta = rank(tmpmeta)/length(tmpmeta)
 	ord = order(tmpmeta)
-	col = bluered(length(tmpmeta))[rank(tmpmeta)]
-	col2 = bluered(length(tmpmeta))[rank(matheat[checkgene[i],])]
-	col = rbind(col2, Metagene=col)
-	rownames(col)[1] = checkgene[i]
-	heatmap.2x(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = col[,ord], Colv=NA, main=paths[i], cexRow=1.0)
-	gatzametalist[[i]] = tmpmeta
-	cor = cor(tmpmeta, matheat[i,])
-	gatzacor[[i]] = cor
 }
-gatzametalist = as.data.frame(gatzametalist)
-colnames(gatzametalist) = gsub('_probes', '', paths)
-gatzametalist = t(as.matrix(gatzametalist))
+dev.off()
 
-names(gatzacor) = paths
-gatzacor = as.data.frame(gatzacor)
+matheat = gatzabatchmas5[commongenes,]
+matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+matheat[matheat < -3] = -3
+matheat[matheat > 3] = 3
 
-tmpord = c('er', 'pr', 'p53', 'bcat', 'e2f1', 'pi3k', 'myc', 'ras', 'ifna', 'ifng', 'akt', 'p63', 'src', 'her2', 'egfr', 'tgfb', 'stat3', 'tnfa')
-
-heatmap.2(gatzametalist, trace='none',scale='none', col=matlab.like, cexRow=1, main='Gatza metagenes')
-heatmap.2(gatzametalist[tmpord,], trace='none',scale='none', col=matlab.like, cexRow=1, Rowv=F, main='Gatza metagenes ordered as in their paper')
-
-cor = cor(t(gatzametalist), method='pearson')
-heatmap.2(cor, trace='none',scale='none', col=matlab.like, cexRow=1)
-heatmap.2(cor[tmpord, tmpord], trace='none',scale='none', col=matlab.like, cexRow=1, Rowv=F, Colv=F)
+pdf('pdf/gtobmas.pdf')
+mgflipob = c("rawobsgenes", "crolgenes","resobsgenes","rescrolgenes", "caobsgenes","cacrolgenes","caresobsgenes","carescrolgenes")
+gtobrma = gatzaPath(mat = gtmasstd, matheat = matheat, pathlist = paths, flip =mgflipmas5, metalist = "gatzametamas5", corlist = "gatzacormas5",  rank = T, checkgene = checkgene)
 dev.off()
 
 
@@ -262,20 +621,23 @@ dev.off()
 
 
 
-origgatzacor = cor(t(gatzametalist), method='pearson')
-origgatzacor2 = cor(t(gatzametalist), method='spearman')
 
-pdf('pdf/gatzacheckoriginal.pdf', height=7, width=14)
-#pdf('pdf/gatzachecknoflip.pdf')
-heatmap.2(gatzametalist, trace='none',scale='none', col=matlab.like, cexRow=1)
-heatmap.2(gatzametalist[gatzaord,], trace='none',scale='none', col=matlab.like, cexRow=1, Rowv=F)
-ord = hclust(dist(gatzametalist))
-dend = as.dendrogram(ord)
-dend = reorder(dend, rowMeans(gatzametalist))
-#ord = rev(ord)
-dev.off()
-pdf('pdf/gatzacororiginal.pdf')
-heatmap.2(origgatzacor, trace='none',scale='none', col=matlab.like, cexRow=1, main='pearson', Rowv=dend, Colv=dend)
-heatmap.2(origgatzacor2, trace='none',scale='none', col=matlab.like, cexRow=1, main='spearman', Rowv=dend, Colv=dend)
-heatmap.2(gatzacor[gatzaord,gatzaord], trace='none',scale='none', col=matlab.like, cexRow=1, dendrogram='none', Rowv=F, Colv=F)
-dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -228,3 +228,125 @@ metamap <- function (metalist, col, main='') {
 
 }
 
+# Function to do gatza pathway stuff:
+# mat = gene expression matrix
+# matheat = gene expression matrix that is used ONLY for the heatmap
+# pathlist = vector of the variable names of the gatza pathways
+# flip = vector of the pathways to be flipped
+# metalist = name of the variable you want to store the metagene values
+# corlist = name of the variable you want to store the correlation values
+# checkgene = vector of genes that represent the expression of the specific gatza pathway
+# rank = boolean; whether to use probit or rank-based metagene scaling
+gatzaPath <- function (mat, matheat, pathlist, flip, metalist, corlist, rank = T, checkgene) {
+	tmpmetalist = list()
+	tmpcorlist = list()
+	for (i in 1:length(pathlist)) {
+		gene = get(pathlist[i])
+		tmpmat = mat[gene,]
+
+		tmpsvd = svd(tmpmat)
+		tmpmeta = tmpsvd$v[,1]
+
+		# flip metagene:
+		if (pathlist[i] %in% flip) {
+			tmpmeta = 1-tmpmeta
+		}
+		
+		# rank-based, or probit scaling:
+		if (rank) {
+			tmpmeta = rank(tmpmeta)/length(tmpmeta)
+		} else {
+			tmpmeta = pnorm(scale(tmpmeta))
+		}
+
+		ord = order(tmpmeta)
+		col = bluered(length(tmpmeta))[rank(tmpmeta)]
+		col2 = bluered(length(tmpmeta))[rank(matheat[checkgene[i],])]
+		col = rbind(col2, Metagene=col)
+		rownames(col)[1] = checkgene[i]
+		heatmap.2x(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = col[,ord], Colv=NA, main=pathlist[i], cexRow=1.0)
+		tmpmetalist[[i]] = tmpmeta
+		cor = cor(tmpmeta, matheat[i,])
+		tmpcorlist[[i]] = cor
+	}
+
+	tmpmetalist = as.data.frame(tmpmetalist)
+	colnames(tmpmetalist) = gsub('_probes', '', pathlist)
+	tmpmetalist = t(as.matrix(tmpmetalist))
+
+	names(tmpcorlist) = pathlist
+	tmpcorlist = as.data.frame(tmpcorlist)
+
+	tmpord = c('er', 'pr', 'p53', 'bcat', 'e2f1', 'pi3k', 'myc', 'ras', 'ifna', 'ifng', 'akt', 'p63', 'src', 'her2', 'egfr', 'tgfb', 'stat3', 'tnfa')
+
+	heatmap.2(tmpmetalist, trace='none',scale='none', col=matlab.like, cexRow=1, main='Gatza metagenes')
+	heatmap.2(tmpmetalist[tmpord,], trace='none',scale='none', col=matlab.like, cexRow=1, Rowv=F, main='Gatza metagenes ordered as in their paper')
+
+	cor = cor(t(tmpmetalist), method='pearson')
+	heatmap.2(cor, trace='none',scale='none', col=matlab.like, cexRow=1)
+	heatmap.2(cor[tmpord, tmpord], trace='none',scale='none', col=matlab.like, cexRow=1, Rowv=F, Colv=F)
+	return(list(metagene = tmpmetalist, correlation = tmpcorlist))
+}
+
+# Function that applies the Gatza transformation matrices to a dataset and plots a heatmap of the metagenes.
+# mat = dataset for the transformation matrix to be applied
+# metalist = variable names of the pathways used to create the transformation matrix (length should be the same as the length of translist)
+# translist = list containing all of the transformation matrix, in the order of the metalist names
+# flip = a vector of pathway names that describes which metagene should be flipped
+# main = name of the heatmap
+gttransfun <- function (mat, metalist, translist, flip, main='') {
+	tmpmetalist = list()
+	for (i in 1:length(metalist)) {
+		# prepare the dataset for transformation:
+		gene = get(metalist[i])
+		tmpmat = mat[gene,]
+
+		# transform the data:
+		tmpmat = translist[[i]] %*% tmpmat
+		tmpmeta = tmpmat[1,]
+
+		# rank the metagenes:
+		tmpmeta = rank(tmpmeta)/length(tmpmeta)
+
+		# flip metagenes that are in the list:
+		if (metalist[i] %in% flip) {
+			tmpmeta = 1-tmpmeta
+		}
+
+		# save the metagene:
+		tmpmetalist[[i]] = tmpmeta
+		names(tmpmetalist)[i] = metalist[i]
+	}
+	# return(tmpmetalist)
+	tmp = as.data.frame(tmpmetalist)
+	tmp= t(as.matrix(tmp))
+	tmpcor = cor(t(tmp), method = 'pearson')
+
+	# make some heatmaps:
+	heatmap.2(x=tmp, scale='none', trace='none', col='bluered', main=main)
+	heatmap.2(x=tmp, scale='none', trace='none', col=matlab.like, main=main)
+	heatmap.2(x=tmpcor, scale='none', trace='none', col='bluered', main=main)
+	heatmap.2(x=tmpcor, scale='none', trace='none', col=matlab.like, main=main)
+
+	reslist = list(metagene=tmp, correlation=tmpcor)
+	return(reslist)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
