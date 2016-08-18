@@ -205,8 +205,9 @@ checkgene = c('AKT1', 'CTNNB1', 'E2F1', 'EGFR', 'ESR1', 'ERBB2', 'IFNA1', 'IFNG'
 # Show the direction of metagenes:
 # make data matrix for the heatmap:
 # This matrix is only used to visualise the direction of the metagene, and is not used in the creation of metagene or the transformation matrix
-matheat = gatzasymrma[checkgene,]
+matheat = gatzasymrma
 matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+matheat = gatzasymrma[checkgene,]
 matheat[matheat < -3] = -3
 matheat[matheat > 3] = 3
 
@@ -270,8 +271,9 @@ dev.off()
 
 # make data matrix for the heatmap:
 # This matrix is only used to visualise the direction of the metagene, and is not used in the creation of metagene or the transformation matrix
-matheat = gatzasymmas5[checkgene,]
+matheat = gatzasymmas5
 matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+matheat = matheat[checkgene,]
 matheat[matheat < -3] = -3
 matheat[matheat > 3] = 3
 
@@ -329,12 +331,52 @@ dev.off()
 # MAS5/non-standardised/rank-based
 pdf('pdf/gtmasrank.pdf')
 mgflipmas5 = c( 'bcat_probes', 'e2f1_probes', 'er_probes', 'ifna_probes', 'ifng_probes', 'myc_probes', 'p53_probes', 'pi3k_probes', 'pr_probes', 'ras_probes')
+mgflipmas5 = c(
+ 			   # 'akt_probes',
+ 			   'bcat_probes',
+ 			   'e2f1_probes',
+			   # 'egfr_probes',
+ 			   'er_probes',
+ 			   # 'her2_probes',
+			   # 'ifna_probes',
+ 			   # 'ifng_probes',
+ 			   'myc_probes',
+ 			   'p53_probes',
+ 			   # 'p63_probes',
+ 			   'pi3k_probes',
+ 			   'pr_probes',
+ 			   'ras_probes'#,
+ 			   'src_probes',
+			   # 'stat3_probes',
+ 			   # 'tgfb_probes',
+			   # 'tnfa_probes'
+ 			   )
 gtmas5metacor3 = gatzaPath(mat = gatzabatchmas5, matheat = matheat, pathlist = paths, flip =mgflipmas5, metalist = "gatzametamas5", corlist = "gatzacormas5",  rank = T, checkgene = checkgene)
 dev.off()
 
 # MAS5/non-standardised/probit
 pdf('pdf/gtmasprobit.pdf')
 mgflipmas5 = c( 'bcat_probes', 'e2f1_probes', 'er_probes', 'myc_probes', 'p53_probes', 'pi3k_probes', 'pr_probes', 'ras_probes')
+mgflipmas5 = c(
+ 			   # 'akt_probes',
+ 			   'bcat_probes',
+ 			   'e2f1_probes',
+			   # 'egfr_probes',
+			   'er_probes',
+ 			   # 'her2_probes',
+			   # 'ifna_probes',
+ 			   # 'ifng_probes',
+ 			   'myc_probes',
+ 			   'p53_probes',
+ 			   # 'p63_probes',
+ 			   'pi3k_probes',
+ 			   'pr_probes',
+ 			   'ras_probes'#,
+ 			   # 'src_probes',
+			   # 'stat3_probes',
+ 			   # 'tgfb_probes',
+			   # 'tnfa_probes'
+ 			   )
 gtmas5metacor4 = gatzaPath(mat = gatzabatchmas5, matheat = matheat, pathlist = paths, flip =mgflipmas5, metalist = "gatzametamas5", corlist = "gatzacormas5",  rank = F, checkgene = checkgene)
 dev.off()
 
@@ -395,8 +437,8 @@ crmas = log2(crmas) ## log2 the data
 crstdrma = t(apply(crrma, 1, function(x) (x-mean(x))/sd(x)))
 crstdmas = t(apply(crmas, 1, function(x) (x-mean(x))/sd(x)))
 
-crobsgene = read.csv('./obsgenes/crobsgenes.txt', header=F)
-crobsgene = as.vector(crobsgene[,1])
+crobsgenes = read.csv('./obsgenes/crobsgenes.txt', header=F)
+crobsgenes = as.vector(crobsgenes[,1])
 
 crclin = read.csv('./clindata/crclin.csv', sep=',', header=T)
 
@@ -515,7 +557,6 @@ gtmastransmat = list()
 for (i in 1:length(paths)) {
 	gene = get(paths[i])
 	mat = gtmasstd[gene,]
-	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
 	svd = svd(mat)
 	trans = diag(1/svd$d) %*% t(svd$u)
 	gtmastransmat[[i]] = trans
@@ -557,22 +598,25 @@ allmastransmat = list()
 for (i in 1:length(allmeta)) {
 	gene = get(allmeta[i])
 	mat = gtmasstd[gene,]
-	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
 	svd = svd(mat)
 	trans = diag(1/svd$d) %*% t(svd$u)
 	allmastransmat[[i]] = trans
 	names(allmastransmat)[i] = allmeta[i]
 }
 
+mgfliprmaall = c( 'bcat_probes', 'e2f1_probes', 'egfr_probes', 'her2_probes', 'ifna_probes', 'ifng_probes', 'p53_probes', 'p63_probes', 'pi3k_probes', 'pr_probes', 'stat3_probes', 'tgfb_probes', 'tnfa_probes', 'resobsgenes')
+
+mgflipmas5all = c( 'akt_probes', 'bcat_probes', 'ifna_probes', 'ifng_probes', 'p53_probes', 'p63_probes', 'pi3k_probes', 'pr_probes', 'src_probes', 'stat3_probes', 'tgfb_probes', 'tnfa_probes', 'crolgenes', 'rescrolgenes', 'cacrolgenes', 'carescrolgenes')
+
 pdf(file='pdf/test2.pdf', width=7, height=7)
-test1 = gttransfun(crstdrma, allmeta, allrmatransmat, mgfliprma, main = "Creighton data (RMA)")
-test2 = gttransfun(crstdmas, allmeta, allmastransmat, mgflipmas5, main = "Creighton data (MAS5)")
-test3 = gttransfun(fmstdrma, allmeta, allrmatransmat, mgfliprma, main = "FM data (RMA)")
-test4 = gttransfun(fmstdmas, allmeta, allmastransmat, mgflipmas5, main = "FM data (MAS5)")
-test5 = gttransfun(crisstdrma, allmeta, allrmatransmat, mgfliprma, main = "Cris data (RMA)")
-test6 = gttransfun(crisstdmas, allmeta, allmastransmat, mgflipmas5, main = "Cris data (MAS5)")
-test7 = gttransfun(gtrmastd, allmeta, allrmatransmat, mgfliprma, main = "Cris data (RMA)")
-test8 = gttransfun(gtmasstd, allmeta, allmastransmat, mgflipmas5, main = "Cris data (MAS5)")
+test1 = gttransfun(crstdrma, allmeta, allrmatransmat, mgfliprmaall, main = "Creighton data (RMA)")
+test2 = gttransfun(crstdmas, allmeta, allmastransmat, mgflipmas5all, main = "Creighton data (MAS5)")
+test3 = gttransfun(fmstdrma, allmeta, allrmatransmat, mgfliprmaall, main = "FM data (RMA)")
+test4 = gttransfun(fmstdmas, allmeta, allmastransmat, mgflipmas5all, main = "FM data (MAS5)")
+test5 = gttransfun(crisstdrma, allmeta, allrmatransmat, mgfliprmaall, main = "Cris data (RMA)")
+test6 = gttransfun(crisstdmas, allmeta, allmastransmat, mgflipmas5all, main = "Cris data (MAS5)")
+test7 = gttransfun(gtrmastd, allmeta, allrmatransmat, mgfliprmaall, main = "Cris data (RMA)")
+test8 = gttransfun(gtmasstd, allmeta, allmastransmat, mgflipmas5all, main = "Cris data (MAS5)")
 dev.off()
 
 ###############################################################################
@@ -582,13 +626,13 @@ commongenes = table(c(rawobsgenes,crolgenes,resobsgenes,rescrolgenes, caobsgenes
 commongenes = commongenes[commongenes==8]
 commongenes = names(commongenes)
 
-matheat = gatzabatchrma[commongenes,]
+matheat = gatzabatchrma
 matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+matheat = matheat[commongenes,]
 matheat[matheat < -3] = -3
 matheat[matheat > 3] = 3
 
 pdf('pdf/gtobrma.pdf')
-tmp = gtrmastd
 for (i in 1:length(allobsname)) {
 	genes = get(allobsname[i])
 	tmp = gtrmastd[genes,]
@@ -596,40 +640,140 @@ for (i in 1:length(allobsname)) {
 	tmpmeta = tmpsvd$v[,1]
 	tmpmeta = rank(tmpmeta)/length(tmpmeta)
 	ord = order(tmpmeta)
+	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=allobsname[i], cexRow=1.0)
 }
 dev.off()
 
-matheat = gatzabatchmas5[commongenes,]
+matheat = gatzabatchmas
 matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+matheat = matheat[commongenes,]
 matheat[matheat < -3] = -3
 matheat[matheat > 3] = 3
 
 pdf('pdf/gtobmas.pdf')
-mgflipob = c("rawobsgenes", "crolgenes","resobsgenes","rescrolgenes", "caobsgenes","cacrolgenes","caresobsgenes","carescrolgenes")
-gtobrma = gatzaPath(mat = gtmasstd, matheat = matheat, pathlist = paths, flip =mgflipmas5, metalist = "gatzametamas5", corlist = "gatzacormas5",  rank = T, checkgene = checkgene)
+for (i in 1:length(allobsname)) {
+	genes = get(allobsname[i])
+	tmp = gtmasstd[genes,]
+	tmpsvd = svd(tmp)
+	tmpmeta = tmpsvd$v[,1]
+	tmpmeta = rank(tmpmeta)/length(tmpmeta)
+	ord = order(tmpmeta)
+	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(tmpmeta))[rank(tmpmeta)][ord], Colv=NA, main=allobsname[i], cexRow=1.0)
+}
 dev.off()
 
+###############################################################################
+## Look at the correlation between the metagene produced from transformation matrix and SVD
 
+# check if function works:
+test1 = getmeta(gtrmastd, paths, gtrmatransmat)
+test2 = getmeta(gtmasstd, paths, gtmastransmat)
+test3 = getmeta(gtmasstd, paths, gtrmatransmat)
+test4 = getmeta(gtrmastd, paths, gtmastransmat)
+# correlation is 1 for both test1 and test2 - as expected since the transformation matrices were derived in this dataset
+# correlation is slightly off for test3 and test4 - probably due to the difference in the normalisation method
 
+# Look at the correlation of the TM vs SVD metagenes in other data:
+test5  = getmeta(fmstdrma, paths, gtrmatransmat)
+test6  = getmeta(fmstdmas, paths, gtmastransmat)
+test7  = getmeta(crstdrma, paths, gtrmatransmat)
+test8  = getmeta(crstdmas, paths, gtmastransmat)
+test9  = getmeta(crisstdrma, paths, gtrmatransmat)
+test10 = getmeta(crisstdmas, paths, gtmastransmat)
 
+txt = c('FM', 'Creighton', 'Cris')
 
+gtrmatransres = cbind(test5$correlation, test7$correlation, test9$correlation)
+colnames(gtrmatransres) = txt
+gtmastransres = cbind(test6$correlation, test8$correlation, test10$correlation)
+colnames(gtmastransres) = txt
 
+###############################################################################
+# Repeat the same thing, but with the BMI metagenes:
 
+allobsname = c(allobsname, 'crobsgenes')
 
+# make transformation matrix in Creighton's data:
+obsrmatransmat = list()
+for (i in 1:length(allobsname)) {
+	gene = get(allobsname[i])
+	mat = crstdrma[gene,]
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	obsrmatransmat [[i]] = trans
+	names(obsrmatransmat)[i] = allobsname[i]
+}
 
+obsmastransmat = list()
+for (i in 1:length(allobsname)) {
+	gene = get(allobsname[i])
+	mat = crstdmas[gene,]
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	obsmastransmat [[i]] = trans
+	names(obsmastransmat)[i] = allobsname[i]
+}
 
+test11 = getmeta(crstdrma, allobsname, obsrmatransmat)
+test12 = getmeta(crstdmas, allobsname, obsmastransmat)
 
+# Look at the correlation of the TM vs SVD metagenes in other data:
+test13 = getmeta(gtrmastd, allobsname, obsrmatransmat)
+test14 = getmeta(gtmasstd, allobsname, obsmastransmat)
+test15 = getmeta(fmstdrma, allobsname, obsrmatransmat)
+test16 = getmeta(fmstdmas, allobsname, obsmastransmat)
+test17 = getmeta(crisstdrma, allobsname, obsrmatransmat)
+test18 = getmeta(crisstdmas, allobsname, obsmastransmat)
 
+txt = c('Gatza', 'FM', 'Cris')
 
+obsrmatransres = cbind(test13$correlation, test15$correlation, test17$correlation)
+colnames(obsrmatransres) = txt
+obsmastransres = cbind(test14$correlation, test16$correlation, test18$correlation)
+colnames(obsmastransres) = txt
 
+###############################################################################
+# Have a quick look at the effect of using RMA on MAS5 data and vice versa
 
+test3 = getmeta(gtmasstd, paths, gtrmatransmat)
+test4 = getmeta(gtrmastd, paths, gtmastransmat)
+# correlation is 1 for both test1 and test2 - as expected since the transformation matrices were derived in this dataset
+# correlation is slightly off for test3 and test4 - probably due to the difference in the normalisation method
+# test3 and test4 would be the 'reference' point for the expected correlation
 
+test19  = getmeta(fmstdrma, paths, gtmastransmat)
+test20  = getmeta(fmstdmas, paths, gtrmatransmat)
+test21  = getmeta(crstdrma, paths, gtmastransmat)
+test22  = getmeta(crstdmas, paths, gtrmatransmat)
+test23  = getmeta(crisstdrma, paths, gtmastransmat)
+test24 = getmeta(crisstdmas, paths, gtrmatransmat)
 
+txt = c('FM', 'Creighton', 'Cris')
 
+revmasonrmagt = cbind(test19$correlation, test21$correlation, test23$correlation)
+colnames(revmasonrmagt) = txt
+revrmaonmasgt = cbind(test20$correlation, test22$correlation, test24$correlation)
+colnames(revrmaonmasgt) = txt
 
+# try it with obesity data
 
+# 'reference' correlation
+test25 = getmeta(crstdrma, paths, gtmastransmat)
+test26 = getmeta(crstdmas, paths, gtrmatransmat)
 
+test27  = getmeta(gtrmastd,   allobsname, obsmastransmat)
+test28  = getmeta(gtmasstd,   allobsname, obsrmatransmat)
+test29  = getmeta(fmstdrma,   allobsname, obsmastransmat)
+test30  = getmeta(fmstdmas,   allobsname, obsrmatransmat)
+test31  = getmeta(crisstdrma, allobsname, obsmastransmat)
+test32 = getmeta(crisstdmas,  allobsname, obsrmatransmat)
 
+txt = c('FM', 'Creighton', 'Cris')
+
+revmasonrmaobs = cbind(test27$correlation, test29$correlation, test31$correlation)
+colnames(revmasonrmaobs) = txt
+revrmaonmasobs = cbind(test28$correlation, test30$correlation, test32$correlation)
+colnames(revrmaonmasobs) = txt
 
 
 

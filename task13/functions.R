@@ -332,6 +332,43 @@ gttransfun <- function (mat, metalist, translist, flip, main='') {
 	return(reslist)
 }
 
+# Function to get the metagene value from both transformation matrix and svd by itself
+# mat = data matrix to get the metagene from
+# metalist = variable names of the pathways
+# translist = list that contains the transformation matrix
+getmeta <- function (mat, metalist, translist) {
+	corval = list()
+	svdmeta = list()
+	transmeta = list()
+	for (i in 1:length(metalist)) {
+		gene = get(metalist[i])
+		tmp = mat[gene,]
+
+		# make metagene from svd:
+		tmpsvd = svd(tmp)
+		tmpmeta = tmpsvd$v[,1]
+		tmpmeta = rank(tmpmeta)/length(tmpmeta)
+
+		# make metagene from transformation matrix:
+		trans = translist[[i]]
+		metatrans = trans %*% tmp
+		metatrans = metatrans[1,]
+		metatrans = rank(metatrans)/length(metatrans)
+
+		svdmeta[[i]] = tmpmeta
+		names(svdmeta)[i] = metalist[i]
+		transmeta[[i]] = metatrans
+		names(svdmeta)[i] = metalist[i]
+		tmpcor = cor(tmpmeta, metatrans, method = 'spearman')
+		corval[[i]] = tmpcor
+	}
+	corval = unlist(corval)
+	names(corval) = metalist
+	# return(corval)
+	svdmeta = as.data.frame(svdmeta)
+	transmeta = as.data.frame(transmeta)
+	return(list(svd = svdmeta, trans = transmeta, correlation = corval))
+}
 
 
 
