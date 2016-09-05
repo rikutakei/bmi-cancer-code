@@ -229,21 +229,44 @@ crobs     -0.9972170  0.9681377 -0.9340308 | -0.9529218  0.8705388 -0.8568546
 
 Start on predicting the BMI metagene based on the linear model constructed from the Gatza pathway metagenes
 
+===============================================================================
 
+18 August 2016
 
+-------------------------------------------------------------------------------
 
+The previous results showed that the genes are consistent over different data sets, but the metagenes created from the genes are not related to the BMI of the samples.
 
+Now we need to see if any of the pathway metagene can predict the BMI metagene.
+	- If it can predict the BMI metagene, then it shows that the pathway metagene(s) are related to the BMI metagene, and not related to BMI.
 
+===============================================================================
 
+23 August 2016
 
+-------------------------------------------------------------------------------
 
+Linear model to predict the BMI metagene was created with the following groups:
+	1. BMI
+	2. BMI status
+	3. BMI and BMI status
+	4. BMI, BMI status, and all pathway metagenes
+	5. All pathway metagenes
+	6. PR metagene
 
+BMI status (obese group) was significant only when included in the model with BMI.
 
+None of the pathway was significant (with or without BMI), except for PR
 
+===============================================================================
 
+6 September 2016
 
+-------------------------------------------------------------------------------
 
+Finished writing up the RMarkdown document about what I have been doing with the metagene direction stuff.
 
+Just remembered about the continuous BMI genes stuff from task13, but realised that we stopped doing it because of the MClust/skewed results that it produced
 
 
 

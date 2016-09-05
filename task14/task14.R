@@ -304,33 +304,12 @@ dev.off()
 
 # MAS5/Standardised/probit
 pdf('pdf/gtmasstdprobit.pdf')
-mgflipmas5 = c( 'bcat_probes', 'egfr_probes', 'er_probes', 'ifna_probes', 'ifng_probes', 'myc_probes', 'p63_probes', 'pr_probes', 'ras_probes', 'stat3_probes', 'tgfb_probes', 'tnfa_probes')
-mgflipmas5 = c(
- 			   'akt_probes',
- 			   'bcat_probes',
- 			   # 'e2f1_probes',
-			   # 'egfr_probes',
- 			   # 'er_probes',
- 			   # 'her2_probes',
-			   'ifna_probes',
- 			   'ifng_probes',
- 			   # 'myc_probes',
- 			   'p53_probes',
- 			   'p63_probes',
- 			   'pi3k_probes',
- 			   'pr_probes',
- 			   # 'ras_probes',
- 			   'src_probes',
-			   'stat3_probes',
- 			   'tgfb_probes',
-			   'tnfa_probes'
- 			   )
+mgflipmas5 = c( 'akt_probes', 'bcat_probes', 'ifna_probes', 'ifng_probes', 'p53_probes', 'p63_probes', 'pi3k_probes', 'pr_probes', 'src_probes', 'stat3_probes', 'tgfb_probes', 'tnfa_probes')
 gtmas5metacor2 = gatzaPath(mat = gtmasstd, matheat = matheat, pathlist = paths, flip =mgflipmas5, metalist = "gatzametamas5", corlist = "gatzacormas5",  rank = F, checkgene = checkgene)
 dev.off()
 
 # MAS5/non-standardised/rank-based
 pdf('pdf/gtmasrank.pdf')
-mgflipmas5 = c( 'bcat_probes', 'e2f1_probes', 'er_probes', 'ifna_probes', 'ifng_probes', 'myc_probes', 'p53_probes', 'pi3k_probes', 'pr_probes', 'ras_probes')
 mgflipmas5 = c(
  			   # 'akt_probes',
  			   'bcat_probes',
@@ -412,7 +391,7 @@ pdf(file='pdf/combmetaplot.pdf', width=7, height=7)
 		main = paste(txt, ' (Non-std/rank)', sep='')
 		plot(x3[i,], y3[i,], main=main, xlab="rma", ylab="mas5")
 		main = paste(txt, ' (Non-std/probit)', sep='')
-		plot(x4[i,], y4[i,], main=main, xlab="rma/rank/NS", ylab="mas5")
+		plot(x4[i,], y4[i,], main=main, xlab="rma", ylab="mas5")
 	}
 dev.off()
 
@@ -421,7 +400,7 @@ dev.off()
 
 # import all the data:
 
-## Creighton et al data:
+# Creighton et al data:
 
 files = readLines('./raw/creighton/files.txt')
 files = paste('./raw/creighton/', files, sep='')
@@ -441,22 +420,6 @@ crobsgenes = read.csv('./obsgenes/crobsgenes.txt', header=F)
 crobsgenes = as.vector(crobsgenes[,1])
 
 crclin = read.csv('./clindata/crclin.csv', sep=',', header=T)
-
-crsymrma = crrma
-tmpgenes = mapIds(hgu133a.db, keys = rownames(crsymrma), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
-rownames(crsymrma) = tmpgenes
-crsymrma = crsymrma[-(which(is.na(rownames(crsymrma)))),]
-crsymrma = collapseRows(crsymrma, unique(rownames(crsymrma)), unique(rownames(crsymrma)))
-crsymrma = crsymrma$datETcollapsed
-dim(crsymrma) #13031 genes
-
-crsymmas = crmas
-tmpgenes = mapIds(hgu133a.db, keys = rownames(crsymmas), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
-rownames(crsymmas) = tmpgenes
-crsymmas = crsymmas[-(which(is.na(rownames(crsymmas)))),]
-crsymmas = collapseRows(crsymmas, unique(rownames(crsymmas)), unique(rownames(crsymmas)))
-crsymmas = crsymmas$datETcollapsed
-dim(crsymmas) #13031 genes
 
 ###############################################################################
 ## Fuentes-Mattei et al data:
@@ -479,22 +442,6 @@ fmobsgene = read.csv('./obsgenes/fmobsgenes.txt', header=T)
 
 fmclin = read.csv('./clindata/fmclin.csv', sep=',', header=T)
 
-fmsymrma = fmrma
-tmpgenes = mapIds(hgu133a.db, keys = rownames(fmsymrma), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
-rownames(fmsymrma) = tmpgenes
-fmsymrma = fmsymrma[-(which(is.na(rownames(fmsymrma)))),]
-fmsymrma = collapseRows(fmsymrma, unique(rownames(fmsymrma)), unique(rownames(fmsymrma)))
-fmsymrma = fmsymrma$datETcollapsed
-dim(fmsymrma) #13031 genes
-
-fmsymmas = fmmas
-tmpgenes = mapIds(hgu133a.db, keys = rownames(fmsymmas), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
-rownames(fmsymmas) = tmpgenes
-fmsymmas = fmsymmas[-(which(is.na(rownames(fmsymmas)))),]
-fmsymmas = collapseRows(fmsymmas, unique(rownames(fmsymmas)), unique(rownames(fmsymmas)))
-fmsymmas = fmsymmas$datETcollapsed
-dim(fmsymmas) #13031 genes
-
 ###############################################################################
 ## Cris Print's Breast cancer data:
 
@@ -513,22 +460,6 @@ crisstdrma = t(apply(crisrma, 1, function(x) (x-mean(x))/sd(x)))
 crisstdmas = t(apply(crismas, 1, function(x) (x-mean(x))/sd(x)))
 
 crisclin = read.csv('./clindata/crisclin2.csv', sep=',', header=T)
-
-crissymrma = crisrma
-tmpgenes = mapIds(hgu133a.db, keys = rownames(crissymrma), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
-rownames(crissymrma) = tmpgenes
-crissymrma = crissymrma[-(which(is.na(rownames(crissymrma)))),]
-crissymrma = collapseRows(crissymrma, unique(rownames(crissymrma)), unique(rownames(crissymrma)))
-crissymrma = crissymrma$datETcollapsed
-dim(crissymrma) #13031 genes
-
-crissymmas = crismas
-tmpgenes = mapIds(hgu133a.db, keys = rownames(crissymmas), column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
-rownames(crissymmas) = tmpgenes
-crissymmas = crissymmas[-(which(is.na(rownames(crissymmas)))),]
-crissymmas = collapseRows(crissymmas, unique(rownames(crissymmas)), unique(rownames(crissymmas)))
-crissymmas = crissymmas$datETcollapsed
-dim(crissymmas) #13031 genes
 
 ###############################################################################
 ## Import my obesity genes from task 13:
@@ -577,8 +508,8 @@ test3 = gttransfun(fmstdrma, paths, gtrmatransmat, mgfliprma, main = "FM data (R
 test4 = gttransfun(fmstdmas, paths, gtmastransmat, mgflipmas5, main = "FM data (MAS5)")
 test5 = gttransfun(crisstdrma, paths, gtrmatransmat, mgfliprma, main = "Cris data (RMA)")
 test6 = gttransfun(crisstdmas, paths, gtmastransmat, mgflipmas5, main = "Cris data (MAS5)")
-test7 = gttransfun(gtrmastd, paths, gtrmatransmat, mgfliprma, main = "Cris data (RMA)")
-test8 = gttransfun(gtmasstd, paths, gtmastransmat, mgflipmas5, main = "Cris data (MAS5)")
+test7 = gttransfun(gtrmastd, paths, gtrmatransmat, mgfliprma, main = "Gatza data (RMA)")
+test8 = gttransfun(gtmasstd, paths, gtmastransmat, mgflipmas5, main = "Gatza data (MAS5)")
 dev.off()
 
 # make all transformation matrices in Gatza data (for now)
@@ -663,7 +594,7 @@ for (i in 1:length(allobsname)) {
 dev.off()
 
 ###############################################################################
-## Look at the correlation between the metagene produced from transformation matrix and SVD
+# Look at the correlation between the metagene produced from transformation matrix and SVD
 
 # check if function works:
 test1 = getmeta(gtrmastd, paths, gtrmatransmat)
@@ -758,8 +689,8 @@ colnames(revrmaonmasgt) = txt
 # try it with obesity data
 
 # 'reference' correlation
-test25 = getmeta(crstdrma, paths, gtmastransmat)
-test26 = getmeta(crstdmas, paths, gtrmatransmat)
+test25 = getmeta(crstdrma, allobsname, obsmastransmat)
+test26 = getmeta(crstdmas, allobsname, obsrmatransmat)
 
 test27  = getmeta(gtrmastd,   allobsname, obsmastransmat)
 test28  = getmeta(gtmasstd,   allobsname, obsrmatransmat)
@@ -774,6 +705,167 @@ revmasonrmaobs = cbind(test27$correlation, test29$correlation, test31$correlatio
 colnames(revmasonrmaobs) = txt
 revrmaonmasobs = cbind(test28$correlation, test30$correlation, test32$correlation)
 colnames(revrmaonmasobs) = txt
+
+###############################################################################
+# Begin on the linear model stuff - predicting BMI metagenes using pathway
+# metagenes
+
+# First, drop some pathways that didn't look good over different data set, using previous results
+# There were six 'decent' pathways to use:
+usepath = c("bcat_probes","er_probes","ifna_probes","ifng_probes","myc_probes","pr_probes")
+
+# Make the data for linear model:
+
+# Make bmiStatus column in Cris's clinical data:
+BMIStatus = crisclin$BMI
+for (i in 1:length(BMIStatus)) {
+	if (is.na(BMIStatus[i])){
+		BMIStatus[i] = 'NA'
+	} else {
+		if (BMIStatus[i] >= 30) {
+			BMIStatus[i] = 'obese'
+		} else if (BMIStatus[i] < 25) {
+			BMIStatus[i] = 'normal'
+		} else {
+			BMIStatus[i] = 'overweight'
+		}
+	}
+}
+crisclin = cbind(crisclin, bmiStatus = BMIStatus)
+names(crisclin)[26] = 'bmi'
+
+# metagene results from RMA (transmat and data) (Cris's data)
+gtmeta = test9$trans[,usepath]
+obsmeta = test17$trans
+alldata = cbind(crisclin, gtmeta, obsmeta)
+rownames(alldata) = gsub('[^_]*_','',rownames(alldata))
+alldata = alldata[-(which(is.na(alldata$bmi))),] ## remove samples with no BMI data
+
+# Create linear model:
+# Linear model with just BMI:
+fit = lm(crobsgenes ~ bmi, alldata)
+summary(fit)
+fit = lm(crobsgenes ~ bmiStatus, alldata)
+summary(fit)
+fit = lm(crobsgenes ~ bmi + bmiStatus, alldata)
+summary(fit)
+
+# Linear model with other pathway metagenes:
+fit2 = lm(crobsgenes ~ bmi + bmiStatus + bcat_probes + er_probes + ifna_probes + ifng_probes + myc_probes + pr_probes, alldata)
+# fit2 = lm(crobsgenes ~ bmiStatus + bcat_probes + er_probes + ifna_probes + ifng_probes + myc_probes + pr_probes, alldata)
+# fit2 = lm(crobsgenes ~ bmi + bcat_probes + er_probes + ifna_probes + ifng_probes + myc_probes + pr_probes, alldata)
+summary(fit2)
+
+# Linear model with pathway metagenes only:
+fit3 = lm(crobsgenes ~ bcat_probes + er_probes + ifna_probes + ifng_probes + myc_probes + pr_probes, alldata)
+summary(fit3)
+
+# Linear model with PR pathway metagene only:
+fit4 = lm(crobsgenes ~ pr_probes, alldata)
+summary(fit4)
+
+# Predict obesity metagene in Creighton's data, using the linear model fitted:
+# (use fit3 or fit4)
+
+# Make the data:
+
+# metagene results from RMA (transmat and data) (Creighton's data)
+gtmeta = test7$trans[,usepath]
+obsmeta = test11$trans
+crdata = cbind(crclin, gtmeta, obsmeta)
+rownames(crdata) = gsub('.CEL','',rownames(crdata))
+
+# Predict the BMI metagene based on the value of the pathway metagenes:
+prediction1 = predict(fit, crdata, se.fit = T)
+cor(prediction1$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction1$fit, crdata$crobsgenes, method = 'pearson')
+
+prediction2 = predict(fit2, crdata, se.fit = T)
+cor(prediction2$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction2$fit, crdata$crobsgenes, method = 'pearson')
+
+prediction3 = predict(fit3, crdata, se.fit = T)
+cor(prediction3$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction3$fit, crdata$crobsgenes, method = 'pearson')
+
+prediction4 = predict(fit4, crdata, se.fit = T)
+cor(prediction4$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction4$fit, crdata$crobsgenes, method = 'pearson')
+
+pdf(file='pdf/prediction.pdf', width=7, height=7)
+plot(crdata$crobsgenes, prediction1$fit, pch=20)
+plot(crdata$crobsgenes, prediction2$fit, pch=20)
+plot(crdata$crobsgenes, prediction3$fit, pch=20)
+plot(crdata$crobsgenes, prediction4$fit, pch=20)
+dev.off()
+
+
+prediction1 = predict(fit, alldata, se.fit = T)
+cor(prediction1$fit, alldata$crobsgenes, method = 'spearman')
+cor(prediction1$fit, alldata$crobsgenes, method = 'pearson')
+
+prediction2 = predict(fit2, alldata, se.fit = T)
+cor(prediction2$fit, alldata$crobsgenes, method = 'spearman')
+cor(prediction2$fit, alldata$crobsgenes, method = 'pearson')
+
+prediction3 = predict(fit3, alldata, se.fit = T)
+cor(prediction3$fit, alldata$crobsgenes, method = 'spearman')
+cor(prediction3$fit, alldata$crobsgenes, method = 'pearson')
+
+prediction4 = predict(fit4, alldata, se.fit = T)
+cor(prediction4$fit, alldata$crobsgenes, method = 'spearman')
+cor(prediction4$fit, alldata$crobsgenes, method = 'pearson')
+
+
+
+pdf(file='pdf/prediction1.pdf', width=7, height=7)
+plot(alldata$crobsgenes, prediction1$fit, pch=20)
+plot(alldata$crobsgenes, prediction2$fit, pch=20)
+plot(alldata$crobsgenes, prediction3$fit, pch=20)
+plot(alldata$crobsgenes, prediction4$fit, pch=20)
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

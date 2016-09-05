@@ -358,7 +358,7 @@ getmeta <- function (mat, metalist, translist) {
 		svdmeta[[i]] = tmpmeta
 		names(svdmeta)[i] = metalist[i]
 		transmeta[[i]] = metatrans
-		names(svdmeta)[i] = metalist[i]
+		names(transmeta)[i] = metalist[i]
 		tmpcor = cor(tmpmeta, metatrans, method = 'spearman')
 		corval[[i]] = tmpcor
 	}

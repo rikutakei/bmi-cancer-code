@@ -106,13 +106,3 @@ Use the genes from the analyses to transform the TCGA data
 
 None of the metagenes found from the Creighton data correlated with
 BMI in any of the TCGA data.
-
-
-
-
-
-
-
-
-
-

@@ -145,15 +145,28 @@ colnames(bmicorstd) = "correlation"
 summary(bmicor)
 summary(bmicorstd)
 
+# Do some data scrambling
+set.seed(1) # set the seed for reproducibility
+
+tmpbmi = sample(crclin$bmi, length(crclin$bmi))
+
+result = cor(t(crstdmat), tmpbmi, method = "spearman")
+for (i in 2:1000) {
+	tmpbmi = sample(crclin$bmi, length(crclin$bmi))
+	tmpres = cor(t(crstdmat), tmpbmi, method = "spearman")
+	result = cbind(result, tmpres)
+	if ((i %% 50) == 0)
+	print(paste( 'finished ', i))
+}
+
+maxres = apply(result, 2, function(x) summary(x)[6])
+
+###############################################################################
 ## Do some MClust stuff:
 mc <- Mclust(bmicor,2)
 y = seq(-0.4,0.4,l=100)
 plot(y, type = 'l', dnorm(y, mc$parameters$mean[1], sqrt(mc$parameters$variance$sigmasq[1])), col = 'blue', ylim = c(0,6))
 lines(y, dnorm(y, mc$parameters$mean[2], sqrt(mc$parameters$variance$sigmasq[2])), col = 'red')
-
-# Do some data scrambling
-set.seed(1) # set the seed for reproducibility
-
 
 ###############################################################################
 ## UCEC DEG stuff
