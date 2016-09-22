@@ -793,10 +793,10 @@ cor(prediction4$fit, crdata$crobsgenes, method = 'spearman')
 cor(prediction4$fit, crdata$crobsgenes, method = 'pearson')
 
 pdf(file='pdf/prediction.pdf', width=7, height=7)
-plot(crdata$crobsgenes, prediction1$fit, pch=20)
-plot(crdata$crobsgenes, prediction2$fit, pch=20)
-plot(crdata$crobsgenes, prediction3$fit, pch=20)
-plot(crdata$crobsgenes, prediction4$fit, pch=20)
+plot(crdata$crobsgenes, prediction1$fit, pch=20, ylab='Predicted metagene', xlab='True metagene', main='BMI-only')
+plot(crdata$crobsgenes, prediction2$fit, pch=20, ylab='Predicted metagene', xlab='True metagene', main='BMI and pathways')
+plot(crdata$crobsgenes, prediction3$fit, pch=20, ylab='Predicted metagene', xlab='True metagene', main='Pathways-only')
+plot(crdata$crobsgenes, prediction4$fit, pch=20, ylab='Predicted metagene', xlab='True metagene', main='PR-only')
 dev.off()
 
 

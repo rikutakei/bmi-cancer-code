@@ -268,7 +268,10 @@ Finished writing up the RMarkdown document about what I have been doing with the
 
 Just remembered about the continuous BMI genes stuff from task13, but realised that we stopped doing it because of the MClust/skewed results that it produced
 
-
+Some TODOs:
+	- start writing up my thesis
+	- start making presentation for the CTCR meeting
+	- finish off the rest of the BMI metagene prediction
 
 
 

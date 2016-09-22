@@ -1,0 +1,23 @@
+===============================================================================
+
+22 September 2016
+
+-------------------------------------------------------------------------------
+
+Starting my final R code for the WHOLE PROJECT (from task1 through to task14).
+
+Shape up all of the function I have used as well and put it in functions_final.R file
+	- remove all of the functions that I don't need, OR
+	- improve any of the functions that I will be using
+
+
+
+
+
+
+
+
+
+
+
+
