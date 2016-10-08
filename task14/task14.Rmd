@@ -1,0 +1,1079 @@
+---
+title: "BMI and Pathway Dysregulation in Cancer"
+author: "Riku Takei"
+output: pdf_document
+---
+
+# BMI and Cancer Project _"Part 2"_
+
+## Summary of the results from part 1 (skip to page 2 for part 2 stuff)
+
+### Creighton metagene in different data
+
+In the first half of the project, I was looking at various obesity-associated metagenes in Creighton's, Fuentes-Mattei's, and TCGA/ICGC cancer data.
+
+First, Creighton's obesity-associated metagene was checked in Creighton's data (i.e. in the data which the metagene was derived in).
+Creighton's metagene was able to capture the overall gene signature of the samples and correlated with both BMI value and status of the samples.
+
+Next, the metagene was transferred across to the ICGC/TCGA cancer data (via transformation matrix) to see if the metagene correlated with the sample BMI in other data sets.
+In the ICGC/TCGA cancer data, Creighton metagene was able to capture the overall gene signature in the data, but the metagene did not correlate with the sample BMI.
+
+Since Creighton metagene did not correlate with sample BMI in other cancer data, we checked if Fuentes-Mattei's (FM) obesity metagene correlated with BMI across multiple cancer types.
+FM's data did not have height/weight/BMI data  for the samples, so the transformation matrix was made in the FM data, then transferred to Creighton's data to check if it correlated with BMI.
+
+The metagene was able to capture the overall genetic signature in the FM data (cannot check for BMI correlation, as no BMI data available).
+The transformation matrix was created in the FM data and it was used to transform Creighton's data to check the correlation with sample BMI.
+In Creighton's data, the metagene was able to capture the overall genetic signature of the data, but the metagene did not correlate with the sample BMI.
+The same result as with Creighton metagene was observed in ICGC/TCGA data with FM's obesity metagene -- genetic signature captured by the metagene, but no correlation with the sample BMI.
+
+### Gene expression analysis in Creighton's data
+
+At this point, we're suspecting whether the obesity-associated genes found by both Creighton's and FM's group are actually obesity-associated.
+To check this, we decided to see if any other clinical variables associated/correlated with the obesity-associated genes.
+If other variables associated/correlated with the metagene, that means that the metagenes that Creighton and FM found were not obesity-specific, but some other clinical variable.
+
+Linear model was created in Creighton's data, using all the clinical variables available for that data set (except BMI and BMI status).
+The residual data (which represents the _leftover_ data after controlling for the clinical variables) was used to find the significantly ecpressed genes between the obese and non-obese samples.
+A gene expression analysis was also performed on the 'normal' data (i.e. not controlling for any variables).
+
+In both cases, the genes were compared with the  Creighton's original obesity-associated genes (i.e. the overlap of the genes between Creighton's original genes with my normal or residual genes).
+This yielded a total of 4 gene sets to check the association with sample BMI.
+
+On top of this, we decided to completely remove the effect of ethnicity by excluding the African-American samples from the data.
+Same procedure was applied to yield another 4 sets of genes (8 in total).
+
+Similar to the previous results, the metagenes derived from these 8 gene sets were able to capture the gene signature and also correlated with BMI status in the data that it was generated.
+However, when transferred over to ICGC/TCGA data, the metagene was able to capture the overall gene signature, but did not correlate with the sample BMI status.
+
+### Gene expression and pathway analysis in ICGC/TCGA data
+
+The results so far showed that the genes derived in Creighton's data was not transferrable to other cancer data, whether it be the same cancer type or not.
+To see if there are _any_ genes or pathways related to BMI that are common in some or all the cancer types, gene expression analysis was carried out on each ICGC/TCGA data separately and checked for any common genes across all the cancer types.
+
+There were no common genes across all the cancer types, and there were no significant pathways in any of the differentially expressed genes identified in each cancer type.
+
+### Aim of the second part of the project
+
+So, the first part of the results showed that the obesity-associated genes were capturing some sort of genetic signature in all of the cancer types available, yet they did not correlate with sample BMI or BMI status (except in the data the gene signatures was derived in).
+It seems like these obesity-associated genes are capturing some underlying molecular mechanism/process that is related to BMI, but not BMI itself.
+Now, the question is what _is_ the underlying mechanism/process that the genetic signatures are capturing.
+
+To test this, we are using Gatza's pathway data, and using Cris Print's NZ breast cancer data as an extra data set on top of Creighton's, FM's, and ICGC/TCGA data.
+
+# Codes and results from the second part of my project
+
+First, set the working directory and load data.
+
+```{r message=F}
+
+# setwd() doesn't work in R markdown....
+opts_knit$set(root.dir='~/Documents/masters/data/task14/')
+
+# source the file to get all the functions from task10.R
+source('~/Documents/codes/bmi-cancer-code/task13/functions.R')
+
+library(gplots)
+library(WGCNA)
+library(hgu133a.db)
+library(limma)
+library(edgeR)
+library(DESeq)
+library(affy)
+library(sva)
+library(devtools)
+library(heatmap.2x)
+library(colorRamps)
+
+```
+
+
+## Gatza's pathway metagenes
+
+To properly compare Gatza's pathway metagenes with the obesity-associated metagenes, the direction of the metagenes must be correct.
+Since singular value decomposition arbitrarily sets the scores for the metagene, the resulting metagene could be facing the "wrong" direction.
+The scores given to the samples will be the same, but the direction of the metagene relative to the actual expression of the gene may be in the opposite direction.
+
+This means that the metagenes must be created then flipped in the right direction before we compare the metagenes to the obesity-associated genes.
+
+### Some problems associated when determining metagene directions
+
+Firstly, the only way to "know" if the metagene is going in the right direction is to check the metagene with the expression of the gene in which the metagene was derived from (e.g. AKT metagene with AKT gene).
+Some of the genes have rediculously ambiguous gene expression which makes it difficult to determine the direction of the metagene.
+
+Another approach was to look at the correlation of the metagene with its gene, so rather than visually looking at the metagene and the gene expression, you can determine whether the metagene is facing the right direction by checking if the correlation is positive (right direction) or negative (wrong direction).
+Again, some of the gene/metagene pair have really ambiguous correlation value, and so you need to guess the direction for some of them.
+
+Secondly, even if the metagenes were in the right direction relative to its gene, it may be in the wrong direction relative to Gatza's original results.
+In the original paper, some metagenes are highly correlated with one another (e.g. ER/PR/p53), whereas other metagenes may be negatively correlated with those metagenes.
+This means that both the direction of the metagene and the relative clustering/grouping with other metagenes must be taken into account.
+In other words, even if the metagene is going in the "right" direction, it may be in the "wrong" direction when you look at the grouping of that metagene with the other metagenes.
+
+Lastly, on top of those considerations, the Gatza data can be either standardised or not, normalised with RMA or MAS5 method, and then the metagene can be ranked or probit-transformed.
+So, if you consider all the possibilities, you'll have to check the directions of 18 pathways in 8 separately processed data.
+
+## Determining the metagene directions
+
+To make sure the metagene directions are correct, Gatza's original data were downloaded and used, so my results were directly comparable to theirs.
+Since they only used samples from HGU133A microarray platform, only those samples were loaded into R and analysed.
+These samples were all from different studies, so each group of data were normalised separately and then combined together to make a single matrix.
+Batch effect was taken into account when the matrix was made.
+
+```{r cache = T,message=F,warning=F}
+
+# Import the sample names included in different GSE experiments:
+files = readLines('./raw/gatza/sample_names/files.txt')
+files = paste('./raw/gatza/sample_names/', files, sep='')
+
+# Make a list of samples, each list element holding the samples from a single
+# study
+sample_list = list()
+for (i in 1:length(files)) {
+	tmp = readLines(files[i])
+	txt = gsub('.*/', '', files[i])
+	txt = gsub('_.*', '', txt)
+	sample_list[[i]] = tmp
+	names(sample_list)[i] = txt
+}
+sample_list = lapply(sample_list, function(x) gsub('.gz','', x))
+
+# Import the hgu133a samples:
+files = readLines('./raw/gatza/hgu133a/files.txt')
+sample_list = lapply(sample_list, function(x) x[which(x %in% files)])
+
+# remove GSE dataset with no HGU133A dataset:
+sample_list = sample_list[lapply(sample_list, length) > 0]
+sample_list = lapply(sample_list, function(x)
+					 paste('./raw/gatza/hgu133a/', x, sep=''))
+
+# import each dataset separately
+rawlist = sample_list
+rawlist = lapply(rawlist, function(x) ReadAffy(filenames = x))
+
+# RMA normalise:
+rmalist = lapply(rawlist, function(x) rma(x))
+rmalist = lapply(rmalist, function(x) exprs(x))
+
+# MAS5 normalise:
+mas5list = lapply(rawlist, function(x) mas5(x))
+mas5list = lapply(mas5list, function(x) exprs(x))
+mas5list = lapply(mas5list, function(x) log2(x))
+
+# combine the independently normalised data into a single matrix:
+gatzarma = do.call(cbind, rmalist)
+gatzamas5 = do.call(cbind, mas5list)
+
+dim(gatzarma) # 22283 by 1060
+dim(gatzamas5) # 22283 by 1060
+
+```
+
+Now that each data set has all the HGU133A samples, normalised (either RMA or MAS5), I need to remove the batch effect introduced by combining all the data into a single matrix.
+To do this, you need to make a model matrix based on the batch where each of the samples came from.
+
+```{r cache=T, warning=F, message=F}
+
+# generate batch info:
+batch = sample_list
+batch = lapply(batch, function(x) gsub('./raw/gatza/hgu133a/', '' , x))
+batch = as.vector(unlist(batch))
+groups = c()
+for (i in 1:length(sample_list)) {
+	tmp = rep(names(sample_list)[[i]], length(sample_list[[i]]))
+	groups = c(groups, tmp)
+}
+batch = cbind(batch, groups)
+
+# Correct for the batch effect:
+# First make a model matrix for the different batches:
+mod = model.matrix(~1, data=as.data.frame(batch))
+
+# Adjust for batch effect:
+gatzabatchrma = ComBat(dat = gatzarma, batch=batch[,2], mod=mod)
+gatzabatchmas5 = ComBat(dat = gatzamas5, batch=batch[,2], mod=mod)
+
+```
+
+Now I have everything I need to work out my pathway directions.
+(Note: This method (normalise individually, stick them together, correct batch effect) was described in the original Gatza paper, in the supplementary data -- i.e. whatever I've done so far _should_ produce similar result as theirs, if not the same result.)
+
+For each data set (RMA/MAS5), make a standardised copy of the data.
+
+```{r cache=T, warning=F, message=F}
+
+# standardise the data:
+gtrmastd = t(apply(gatzabatchrma, 1, function(x) (x-mean(x))/sd(x)))
+gtmasstd = t(apply(gatzabatchmas5, 1, function(x) (x-mean(x))/sd(x)))
+
+```
+
+Make a matrix with the gene symbols, rather than the probe IDs.
+These matrices are only for visualising the direction of the metagene vs. actual gene expression of the representative gene.
+
+```{r cache=T, warning=F, message=F}
+
+# make a matrix of gene symbols for checking the direction of specific genes
+gatzasymmas5 = gatzabatchmas5
+tmpgenes = mapIds(hgu133a.db, keys = rownames(gatzasymmas5),
+				  column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+rownames(gatzasymmas5) = tmpgenes
+gatzasymmas5 = gatzasymmas5[-(which(is.na(rownames(gatzasymmas5)))),]
+gatzasymmas5 = collapseRows(gatzasymmas5, unique(rownames(gatzasymmas5)),
+							unique(rownames(gatzasymmas5)))
+gatzasymmas5 = gatzasymmas5$datETcollapsed
+dim(gatzasymmas5) #13031 genes
+
+gatzasymrma = gatzabatchrma
+tmpgenes = mapIds(hgu133a.db, keys = rownames(gatzasymrma),
+				  column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+rownames(gatzasymrma) = tmpgenes
+gatzasymrma = gatzasymrma[-(which(is.na(rownames(gatzasymrma)))),]
+gatzasymrma = collapseRows(gatzasymrma, unique(rownames(gatzasymrma)),
+						   unique(rownames(gatzasymrma)))
+gatzasymrma = gatzasymrma$datETcollapsed
+dim(gatzasymrma) #13031 genes
+
+```
+
+Import Gatza's pathway metagenes and make a vector of genes that represent each pathway.
+
+```{r cache=T, warning=F, message=F}
+
+## import pathway gene list from the Gatza paper
+files = readLines('./gatzagenelist/pathlist.txt')
+files = paste('./gatzagenelist/', files, sep='')
+for (i in 1:length(files)) {
+	txt = gsub('./gatzagenelist/','',files[i])
+	txt = gsub('.txt','',txt)
+	genes = readLines(files[i])
+	genes = genes[which(genes %in% rownames(gatzabatchrma))]
+	assign(txt, genes)
+}
+
+# make a variable with list of the name of the pathways
+paths = gsub('./gatzagenelist/', '', files)
+paths = gsub('.txt', '', paths)
+paths
+
+# list of genes related to/representing the pathway:
+checkgene = c('AKT1', 'CTNNB1', 'E2F1', 'EGFR', 'ESR1', 'ERBB2', 'IFNA1',
+			  'IFNG', 'MYC', 'TP53', 'TP63', 'PIK3CA', 'PGR', 'HRAS', 'SRC',
+			  'STAT3', 'TGFB1', 'TNF')
+
+```
+
+Check the metagene direction using the RMA normalised data first.
+This was done by starting with all the pathways, then commenting out one or more pathways at a time for the function to flip (or not).
+
+Both the clustering of the pathways by the heatmap function, and the pathway ordering from the Gatza paper were considered for finding out the best direction for that particular pathway metagene.
+
+If the heatmap function clustered the pathways similar to the original Gatza paper, __AND__ the forced ordering of the pathway metagenes look vaguely similar to the figure in Gatza's paper, then that 'flipping vector' will be used to change the metagene directions in the transferred data.
+
+Since the output is going to be massive, this code chunk is not evaluated --  see the corresponding pdf output for the results.
+
+```{r cache=F, warning=F, message=F, eval = F}
+
+# make data matrix for the heatmap:
+# This matrix is only used to visualise the direction of the metagene, and is not used in the creation of metagene or the transformation matrix
+matheat = gatzasymrma
+matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+matheat = gatzasymrma[checkgene,]
+matheat[matheat < -3] = -3
+matheat[matheat > 3] = 3
+
+# RMA/Standardised/rank-based
+# pdf('pdf/gtrmastdrank.pdf')
+mgfliprma = c(
+			  # 'akt_probes',
+			  'bcat_probes',
+			  'e2f1_probes',
+			  'egfr_probes',
+			  # 'er_probes',
+			  'her2_probes',
+			  'ifna_probes',
+			  'ifng_probes',
+			  # 'myc_probes',
+			  'p53_probes',
+			  'p63_probes',
+			  'pi3k_probes',
+			  'pr_probes',
+			  # 'ras_probes',
+			  # 'src_probes',
+			  'stat3_probes',
+			  'tgfb_probes',
+			  'tnfa_probes'
+			  )
+gtrmametacor1 = gatzaPath(mat = gtrmastd, matheat = matheat, pathlist = paths,
+						  flip = mgfliprma, metalist = "gatzametarma", corlist
+						  = "gatzacorrma",  rank = T, checkgene = checkgene)
+# dev.off()
+
+# RMA/Standardised/probit
+# pdf('pdf/gtrmastdprobit.pdf')
+mgfliprma = c( 'bcat_probes', 'e2f1_probes', 'egfr_probes', 'her2_probes',
+			  'ifna_probes', 'ifng_probes', 'p53_probes', 'p63_probes',
+			  'pi3k_probes', 'pr_probes', 'stat3_probes', 'tgfb_probes',
+			  'tnfa_probes')
+gtrmametacor2 = gatzaPath(mat = gtrmastd, matheat = matheat, pathlist = paths,
+						  flip = mgfliprma, metalist = "gatzametarma", corlist
+						  = "gatzacorrma",  rank = F, checkgene = checkgene)
+# dev.off()
+
+# RMA/non-standardised/rank-based
+# pdf('pdf/gtrmarank.pdf')
+mgfliprma = c( 'bcat_probes', 'e2f1_probes', 'er_probes', 'ifna_probes',
+			  'ifng_probes', 'myc_probes', 'p53_probes', 'pi3k_probes',
+			  'pr_probes', 'ras_probes')
+gtrmametacor3 = gatzaPath(mat = gatzabatchrma, matheat = matheat, pathlist
+						  = paths, flip = mgfliprma, metalist = "gatzametarma",
+						  corlist = "gatzacorrma",  rank = T, checkgene
+						  = checkgene)
+# dev.off()
+
+# RMA/non-standardised/probit
+# pdf('pdf/gtrmaprobit.pdf')
+mgfliprma = c( 'bcat_probes', 'e2f1_probes', 'er_probes', 'ifna_probes',
+			  'ifng_probes', 'myc_probes', 'p53_probes', 'pi3k_probes',
+			  'pr_probes', 'ras_probes', 'tgfb_probes')
+gtrmametacor4 = gatzaPath(mat = gatzabatchrma, matheat = matheat, pathlist
+						  = paths, flip = mgfliprma, metalist = "gatzametarma",
+						  corlist = "gatzacorrma",  rank = F, checkgene
+						  = checkgene)
+# dev.off()
+
+```
+It was quite obvious that there was no (or very little) difference in the metagene values produced between the probit or rank-based method.
+The results between standardised and non-standardised data were very different (e.g. the metagenes from std. probit  was different from the metagenes created from non-std. probit).
+
+```{r cache=T, warning=F, message=F, eval = F}
+
+# pdf(file='pdf/rmametaplot.pdf', width=7, height=7)
+x1 = gtrmametacor1$metagene
+x2 = gtrmametacor2$metagene
+x3 = gtrmametacor3$metagene
+x4 = gtrmametacor4$metagene
+for (i in 1:nrow(x1)) {
+	main = rownames(x1)[i]
+	plot(x1[i,], x2[i,], main=main, xlab="Std/rank", ylab="Std/probit")
+	plot(x3[i,], x4[i,], main=main, xlab="Non-std/rank", ylab="Non-std/probit")
+	plot(x1[i,], x3[i,], main=main, xlab="Std/rank", ylab="Non-std/rank")
+	plot(x2[i,], x4[i,], main=main, xlab="Std/probit", ylab="Non-std/probit")
+}
+# dev.off()
+
+```
+
+The same analysis was repeated in the MAS5 normalised data.
+
+```{r cache=T, warning=F, message=F, eval = F}
+
+# make data matrix for the heatmap:
+# This matrix is only used to visualise the direction of the metagene, and is not used in the creation of metagene or the transformation matrix
+matheat = gatzasymmas5
+matheat = t(apply(matheat, 1, function(x) (x-mean(x))/sd(x)))
+matheat = matheat[checkgene,]
+matheat[matheat < -3] = -3
+matheat[matheat > 3] = 3
+
+# MAS5/Standardised/rank-based
+# pdf('pdf/gtmasstdrank.pdf')
+mgflipmas5 = c(
+			   'akt_probes',
+			   'bcat_probes',
+			   # 'e2f1_probes',
+			   # 'egfr_probes',
+			   # 'er_probes',
+			   # 'her2_probes',
+			   'ifna_probes',
+			   'ifng_probes',
+			   # 'myc_probes',
+			   'p53_probes',
+			   'p63_probes',
+			   'pi3k_probes',
+			   'pr_probes',
+			   # 'ras_probes',
+			   'src_probes',
+			   'stat3_probes',
+			   'tgfb_probes',
+			   'tnfa_probes'
+			   )
+gtmas5metacor1 = gatzaPath(mat = gtmasstd, matheat = matheat, pathlist = paths,
+						   flip =mgflipmas5, metalist = "gatzametamas5",
+						   corlist = "gatzacormas5", rank = T, checkgene
+						   = checkgene)
+# dev.off()
+
+# MAS5/Standardised/probit
+# pdf('pdf/gtmasstdprobit.pdf')
+mgflipmas5 = c( 'akt_probes', 'bcat_probes', 'ifna_probes', 'ifng_probes',
+			   'p53_probes', 'p63_probes', 'pi3k_probes', 'pr_probes',
+			   'src_probes', 'stat3_probes', 'tgfb_probes', 'tnfa_probes')
+gtmas5metacor2 = gatzaPath(mat = gtmasstd, matheat = matheat, pathlist = paths,
+						   flip =mgflipmas5, metalist = "gatzametamas5",
+						   corlist = "gatzacormas5", rank = F, checkgene
+						   = checkgene)
+# dev.off()
+
+# pdf('pdf/gtmasrank.pdf')
+mgflipmas5 = c( 'bcat_probes', 'e2f1_probes', 'er_probes', 'myc_probes',
+			   'p53_probes', 'pi3k_probes', 'pr_probes', 'ras_probes')
+gtmas5metacor3 = gatzaPath(mat = gatzabatchmas5, matheat = matheat, pathlist
+						   = paths, flip =mgflipmas5, metalist
+						   = "gatzametamas5", corlist = "gatzacormas5", rank
+						   = T, checkgene = checkgene)
+# dev.off()
+
+# MAS5/non-standardised/probit
+# pdf('pdf/gtmasprobit.pdf')
+mgflipmas5 = c( 'bcat_probes', 'e2f1_probes', 'er_probes', 'myc_probes',
+			   'p53_probes', 'pi3k_probes', 'pr_probes', 'ras_probes')
+gtmas5metacor4 = gatzaPath(mat = gatzabatchmas5, matheat = matheat, pathlist
+						   = paths, flip =mgflipmas5, metalist
+						   = "gatzametamas5", corlist = "gatzacormas5", rank
+						   = F, checkgene = checkgene)
+# dev.off()
+
+```
+Again, there was very little difference in the results between the probit vs. rank-based method, but the results differed between the standardised vs. non-standardised.
+
+```{r cache=F, warning=F, message=F, eval = F}
+
+# pdf(file='pdf/mas5metaplot.pdf', width=7, height=7)
+x1 = gtmas5metacor1$metagene
+x2 = gtmas5metacor2$metagene
+x3 = gtmas5metacor3$metagene
+x4 = gtmas5metacor4$metagene
+for (i in 1:nrow(x1)) {
+	main = rownames(x1)[i]
+	plot(x1[i,], x2[i,], main=main, xlab="Std/rank", ylab="Std/probit")
+	plot(x3[i,], x4[i,], main=main, xlab="Non-std/rank", ylab="Non-std/probit")
+	plot(x1[i,], x3[i,], main=main, xlab="Std/rank", ylab="Non-std/rank")
+	plot(x2[i,], x4[i,], main=main, xlab="Std/probit", ylab="Non-std/probit")
+}
+# dev.off()
+
+```
+
+Looking at the variability between the two normalisation methods (RMA vs. MAS5):
+
+```{r cache=F, eval=F, warning=F, message=F}
+
+# pdf(file='pdf/combmetaplot.pdf', width=7, height=7)
+x1 = gtrmametacor1$metagene
+x2 = gtrmametacor2$metagene
+x3 = gtrmametacor3$metagene
+x4 = gtrmametacor4$metagene
+y1 = gtmas5metacor1$metagene
+y2 = gtmas5metacor2$metagene
+y3 = gtmas5metacor3$metagene
+y4 = gtmas5metacor4$metagene
+for (i in 1:nrow(x1)) {
+	txt = rownames(x1)[i]
+	main = paste(txt, ' (Std/rank)', sep='')
+	plot(x1[i,], y1[i,], main=main, xlab="rma", ylab="mas5")
+	main = paste(txt, ' (Std/probit)', sep='')
+	plot(x2[i,], y2[i,], main=main, xlab="rma", ylab="mas5")
+	main = paste(txt, ' (Non-std/rank)', sep='')
+	plot(x3[i,], y3[i,], main=main, xlab="rma", ylab="mas5")
+	main = paste(txt, ' (Non-std/probit)', sep='')
+	plot(x4[i,], y4[i,], main=main, xlab="rma", ylab="mas5")
+}
+# dev.off()
+
+```
+
+There were some variability between the metagenes created in RMA vs. the MAS5 method, most likely due to the difference in the normalisation method.
+Some pathways had greater variability, whereas some other pathways (such as ER) were more consistent and more tightly correlated, even though the normalisation method was different.
+
+The metagenes between the RMA and MAS5 normalised data correlated less tightly in the non-standardised data compared with the standardised data (e.g. non-std/probit/RMA vs. non-std/probit/MAS5).
+Since standardising  the data puts all the genes onto the same scale, it keeps the metagenes less affected by some 'outlier' genes which may or may not dictate the metagene value for that sample.
+
+The metagenes produced from the non-standardised data were probably more variable compared to the metagenes created from the standardised data.
+From these results, I decided to make the transformation matrix using the standardised data and the rank-based method (rank and probit produced the same results, so use either to get the metagene scores).
+
+Now, I just need to know which normalisation method transfers over to other data the best.
+
+## Which data to generate the obesity metagene transformation matrix?
+
+The obesity metagenes were derived in Creighton data, but the pathway metagenes were derived in Gatza data.
+Is it a good idea to make both the obesity and pathway transformation matrices in a single data set?
+For example, do I make both obesity and pathway transformation matrix in Creighton data, or both in Gatza data?
+
+To figure this out, you need to compare the metagene scores created from just SVD and the metagenes created from the transformation matrix.
+
+If the correlation of the metagene scores are high (either in negative or positive direction), it shows that the metagene created from the SVD is no different to the metagene created from the transformation matrix.
+Therefore, if this is the case, then for that particular data set, it does not matter whether you use the transformation matrix or SVD.
+Furthermore, this shows that the transformation matrices can be made in either data set: in the data set the transformation matrices was originally created, or in the data set the transformation matrix was applied to (i.e. the data with high correlation of transformation matrix and SVD metagenes).
+
+On the other hand, if the correlation was weak between the SVD and the transformation matrix metagenes, then it shows that the transformation matrix creates unique metagene in that data set.
+Therefore, you will have to use the transformation matrix from the original data in which the metagenes were derived in (as the transformation matrix has its 'unique weighting' from that data).
+
+First import Creighton, FM and Cris' breast cancer data:
+
+```{r cache=T, warning=F, message=F}
+
+# Creighton et al data:
+
+files = readLines('./raw/creighton/files.txt')
+files = paste('./raw/creighton/', files, sep='')
+crraw = ReadAffy(filenames = files)
+
+crrma = rma(crraw) ## RMA normalise the data
+crrma = exprs(crrma) ## change the format into matrix
+
+crmas = mas5(crraw) ## Mas5 normalise the data
+crmas = exprs(crmas) ## change the format into matrix
+crmas = log2(crmas) ## log2 the data
+
+crstdrma = t(apply(crrma, 1, function(x) (x-mean(x))/sd(x)))
+crstdmas = t(apply(crmas, 1, function(x) (x-mean(x))/sd(x)))
+
+crobsgenes = read.csv('./obsgenes/crobsgenes.txt', header=F)
+crobsgenes = as.vector(crobsgenes[,1])
+
+crclin = read.csv('./clindata/crclin.csv', sep=',', header=T)
+
+# Fuentes-Mattei et al data:
+
+files = readLines('./raw/fuentes-mattei/files.txt')
+files = paste('./raw/fuentes-mattei/', files, sep='')
+fmraw = ReadAffy(filenames = files)
+
+fmrma = rma(fmraw) ## RMA normalise the data
+fmrma = exprs(fmrma) ## change the format into matrix
+
+fmmas = mas5(fmraw) ## Mas5 normalise the data
+fmmas = exprs(fmmas) ## change the format into matrix
+fmmas = log2(fmmas) ## log2 the data
+
+fmstdrma = t(apply(fmrma, 1, function(x) (x-mean(x))/sd(x)))
+fmstdmas = t(apply(fmmas, 1, function(x) (x-mean(x))/sd(x)))
+
+fmobsgene = read.csv('./obsgenes/fmobsgenes.txt', header=T)
+
+fmclin = read.csv('./clindata/fmclin.csv', sep=',', header=T)
+
+# Cris Print's Breast cancer data:
+
+files = readLines('./raw/cris/files.txt')
+files = paste('./raw/cris/', files, sep='')
+crisraw = ReadAffy(filenames = files)
+
+crisrma = rma(crisraw) ## RMA normalise the data
+crisrma = exprs(crisrma) ## change the format into matrix
+
+crismas = mas5(crisraw) ## Mas5 normalise the data
+crismas = exprs(crismas) ## change the format into matrix
+crismas = log2(crismas) ## log2 the data
+
+crisstdrma = t(apply(crisrma, 1, function(x) (x-mean(x))/sd(x)))
+crisstdmas = t(apply(crismas, 1, function(x) (x-mean(x))/sd(x)))
+
+crisclin = read.csv('./clindata/crisclin2.csv', sep=',', header=T)
+
+```
+
+Make the transformation matrices from Gatza data.
+The paths to flip were determined from the results in the previous section.
+Note that the vector of the pathways to flip are different for each normalisation methods used.
+
+```{r cache=T, warning=F, message=F}
+
+## Make transformation matrix:
+
+gtrmatransmat = list()
+for (i in 1:length(paths)) {
+	gene = get(paths[i])
+	mat = gtrmastd[gene,]
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	gtrmatransmat[[i]] = trans
+	names(gtrmatransmat)[i] = paths[i]
+}
+
+gtmastransmat = list()
+for (i in 1:length(paths)) {
+	gene = get(paths[i])
+	mat = gtmasstd[gene,]
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	gtmastransmat[[i]] = trans
+	names(gtmastransmat)[i] = paths[i]
+}
+
+mgfliprma = c( 'bcat_probes', 'e2f1_probes', 'egfr_probes', 'her2_probes',
+			  'ifna_probes', 'ifng_probes', 'p53_probes', 'p63_probes',
+			  'pi3k_probes', 'pr_probes', 'stat3_probes', 'tgfb_probes',
+			  'tnfa_probes')
+
+mgflipmas5 = c( 'akt_probes', 'bcat_probes', 'ifna_probes', 'ifng_probes',
+			   'p53_probes', 'p63_probes', 'pi3k_probes', 'pr_probes',
+			   'src_probes', 'stat3_probes', 'tgfb_probes', 'tnfa_probes')
+
+```
+
+Quick look to see if the direction of the metagenes transfer over to other data sets.
+
+```{r cache=T, warning=F, message=F, eval=F}
+
+# pdf(file='pdf/test.pdf', width=7, height=7)
+test1 = gttransfun(crstdrma, paths, gtrmatransmat, mgfliprma, main = "Creighton
+				   data (RMA)")
+test2 = gttransfun(crstdmas, paths, gtmastransmat, mgflipmas5, main
+				   = "Creighton data (MAS5)")
+test3 = gttransfun(fmstdrma, paths, gtrmatransmat, mgfliprma, main = "FM data
+				   (RMA)")
+test4 = gttransfun(fmstdmas, paths, gtmastransmat, mgflipmas5, main = "FM data
+				   (MAS5)")
+test5 = gttransfun(crisstdrma, paths, gtrmatransmat, mgfliprma, main = "Cris
+				   data (RMA)")
+test6 = gttransfun(crisstdmas, paths, gtmastransmat, mgflipmas5, main = "Cris
+				   data (MAS5)")
+test7 = gttransfun(gtrmastd, paths, gtrmatransmat, mgfliprma, main = "Gatza
+				   data (RMA)")
+test8 = gttransfun(gtmasstd, paths, gtmastransmat, mgflipmas5, main = "Gatza
+				   data (MAS5)")
+# dev.off()
+
+```
+
+The direction of the metagenes that was estimated in the Gatza data seem to be transferring correctly into other data sets, as seen by the similar pathway clustering observed as the original figure (e.g. ER/PR, IFNa/IFNg).
+
+## Gatza pathway transformation matrices
+
+For Gatza pathway metagenes, all 18 transformation matrices were made in the Gatza data and tranformed over into other data sets (Creighton, FM, and Cris).
+Since the transformation matrices were derived in Gatza data, the metagene created from either SVD or the transformation matrix in Gatza data should be the same, and therefore it should have the correlation of 1.
+
+```{r cache=T, warning=F, message=F}
+
+test1 = getmeta(gtrmastd, paths, gtrmatransmat)
+test2 = getmeta(gtmasstd, paths, gtmastransmat)
+
+head(test1$correlation)
+head(test2$correlation)
+
+```
+
+Let's have a look at what the correlation looks like in the same data set, but different normalisation method -- transformation matrix from RMA normalised Gatza data int MAS5 normalised Gatza data, and vice versa.
+
+```{r cache=T, warning=F, message=F}
+
+test3 = getmeta(gtmasstd, paths, gtrmatransmat)
+test4 = getmeta(gtrmastd, paths, gtmastransmat)
+
+test3$correlation
+test4$correlation
+
+```
+
+There is a slight variation in the correlation, even though the transformation matrix was derived in the same data.
+This is probably due to the difference in the normalisation methods used.
+
+Moving onto other data sets:
+
+```{r cache=T, warning=F, message=F}
+
+# Look at the correlation of the TM vs SVD metagenes in other data:
+test5  = getmeta(fmstdrma, paths, gtrmatransmat)
+test6  = getmeta(fmstdmas, paths, gtmastransmat)
+test7  = getmeta(crstdrma, paths, gtrmatransmat)
+test8  = getmeta(crstdmas, paths, gtmastransmat)
+test9  = getmeta(crisstdrma, paths, gtrmatransmat)
+test10 = getmeta(crisstdmas, paths, gtmastransmat)
+
+txt = c('FM', 'Creighton', 'Cris')
+
+gtrmatransres = cbind(test5$correlation, test7$correlation, test9$correlation)
+colnames(gtrmatransres) = txt
+gtmastransres = cbind(test6$correlation, test8$correlation, test10$correlation)
+colnames(gtmastransres) = txt
+
+# RMA transformation matrix in RMA normalised data:
+gtrmatransres
+
+# MAS5 transformation matrix in MAS5 normalised data:
+gtmastransres
+
+```
+
+As you can see, there are some pathways that have very high correlation (e.g. ER, PR, MYC), but most pathways have variable correlations across different data sets -- high correlation in some, low in another data set, or low in all data sets.
+This shows that, apart from the highly correlating pathways, these pathways are highly variable across different data sets. (and probably not reliable as a genetic marker/signature?)
+
+In addition, it seems like some of the correlation of the pathway metagenes are slightly lower in the MAS5 transformed data, compared to the RMA normalised data.
+This is probably due to the difference in normalisation method, either in the data in which the transformation matrices were derived in, or in the data in which the transformation matrices were transferred onto.
+
+## Obesity pathway transformation matrices
+
+The above process was repeated with the obesity metagenes in the Creighton data.
+The transformation matrices for the 9 metagenes (8 metagenes I have found + Creighton's original metagene) were created in Creighton's data, and were used to transform Gatza, FM, and Cris' data.
+
+Some abbreviations to decode the variable names:
+
+* raw (or no prefix) = genes found in the raw data
+* cr = Creighton
+* res = genes found in the residual data
+* ol = genes that overlapped with the original obesity genes from Creighton's paper
+* obs = obesity genes
+* ca = genes found in caucasian-only data
+
+Examples:
+
+* crol = obesity genes found in the raw data that overlapped with the original Creighton obesity genes
+* carescrol = genes found in the residual data from the caucasian-only data that overlapped with the original Creighton obesity genes
+* crobs = original Creighton obesity genes
+
+```{r cache=T, warning=F, message=F}
+
+# list of obesity-associated gene signature names:
+allobsname = c("rawobsgenes","crolgenes","resobsgenes","rescrolgenes",
+			   "caobsgenes","cacrolgenes","caresobsgenes","carescrolgenes")
+
+# import these genes:
+for (i in 1:length(allobsname)) {
+		txt = paste('./obsgenes/', allobsname[i], sep='')
+	txt = paste(txt, '.txt', sep='')
+		assign(allobsname[i], dget(txt))
+}
+
+# add Creighton's original obesity-associated genes to the list:
+allobsname = c(allobsname, "crobsgenes")
+
+# make transformation matrix in Creighton's data:
+obsrmatransmat = list()
+for (i in 1:length(allobsname)) {
+	gene = get(allobsname[i])
+	mat = crstdrma[gene,]
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	obsrmatransmat [[i]] = trans
+	names(obsrmatransmat)[i] = allobsname[i]
+}
+
+obsmastransmat = list()
+for (i in 1:length(allobsname)) {
+	gene = get(allobsname[i])
+	mat = crstdmas[gene,]
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	obsmastransmat [[i]] = trans
+	names(obsmastransmat)[i] = allobsname[i]
+}
+
+```
+
+The correlation should be 1 in Creighton's data:
+
+```{r cache=T, warning=F, message=F}
+
+test11 = getmeta(crstdrma, allobsname, obsrmatransmat)
+test12 = getmeta(crstdmas, allobsname, obsmastransmat)
+
+head(test11$correlation)
+head(test12$correlation)
+
+```
+
+Correlation of the metagenes in other data sets:
+
+```{r cache=T, warning=F, message=F}
+
+
+# Look at the correlation of the TM vs SVD metagenes in other data:
+test13 = getmeta(gtrmastd, allobsname, obsrmatransmat)
+test14 = getmeta(gtmasstd, allobsname, obsmastransmat)
+test15 = getmeta(fmstdrma, allobsname, obsrmatransmat)
+test16 = getmeta(fmstdmas, allobsname, obsmastransmat)
+test17 = getmeta(crisstdrma, allobsname, obsrmatransmat)
+test18 = getmeta(crisstdmas, allobsname, obsmastransmat)
+
+txt = c('Gatza', 'FM', 'Cris')
+
+obsrmatransres = cbind(test13$correlation, test15$correlation, test17$correlation)
+colnames(obsrmatransres) = txt
+obsmastransres = cbind(test14$correlation, test16$correlation, test18$correlation)
+colnames(obsmastransres) = txt
+
+# RMA transformation matrix in RMA normalised data:
+obsrmatransres
+
+# MAS5 transformation matrix in MAS5 normalised data:
+obsmastransres
+
+```
+
+Unlike in the Gatza pathway metagenes, all of the obesity-associated gene signatures showed high correlation across all of the data sets.
+This shows that all of the obesity-associated gene signatures are consistent across all the breast cancer data sets available to us, but none of them correlate/associate with the sample BMI/BMI status when transferred across data sets.
+
+Again, the MAS5 data seemed to produce a slightly lower correlation compared to the RMA normalised data, which can be due to the transformation matrices themselves, or the data in which the transformation matrices are applied onto.
+
+## Side analysis: Normalisation method -- RMA or MAS5?
+
+I've narrowed down the data set into the standardised and rank-based data set, but I'm still not sure of which normalisation method to use for that data, and subsequently for the transformation matrix.
+
+If either one of the data produce transformation matrices that transfer well across different cancer data, then that normalisation method is likely to be better for metagene creation, as it will produce a more consistent result across different data sets.
+But nothing is as easy as this, and as you saw from the previous results, both normalisation methods showed variable metagene values across different data sets, and so it's quite hard to say which normalisation method is the best to use.
+
+Also, another question is: what's more important for the metagene generation?
+The normalisation method of the data where the transformation matrix is **applied to**, or the normalisation method of the data where the transformation matrix is **derived from**?
+
+To answer this, I decided to repeat the above analysis using RMA transformation matrix on MAS5 normalised data, and vice versa, and looked for any difference in performance for different normalisation methods.
+(At the time I wasn't sure what I was going to do with these results, but I _think_ the results ended up answering this question)
+
+The 'baseline variability' should be the correlation that result from the original data when different transformation matrices are applied:
+
+```{r cache=T, warning=F, message=F}
+
+# Original data for pathway meteagenes = Gatza's data
+# RMA transformation matrix applied to MAS5 normalised data, and vice versa
+test3 = getmeta(gtmasstd, paths, gtrmatransmat)
+test4 = getmeta(gtrmastd, paths, gtmastransmat)
+
+res = cbind(RMAonMAS5 = test3$correlation, MAS5onRMA = test4$correlation)
+res
+
+```
+
+In the RMA normalised data (MAS5 transformation matrix), the pathway metagenes tend to be _very_ slightly lower than the MAS5 normalised data, but it's hard to tell.
+
+Having a look at the effect of different transformation matrix on other data:
+
+```{r cache=T, warning=F, message=F}
+
+test19 = getmeta(fmstdrma, paths, gtmastransmat)
+test20 = getmeta(fmstdmas, paths, gtrmatransmat)
+test21 = getmeta(crstdrma, paths, gtmastransmat)
+test22 = getmeta(crstdmas, paths, gtrmatransmat)
+test23 = getmeta(crisstdrma, paths, gtmastransmat)
+test24 = getmeta(crisstdmas, paths, gtrmatransmat)
+
+txt = c('FM', 'Creighton', 'Cris')
+
+revmasonrmagt = cbind(test19$correlation, test21$correlation, test23$correlation)
+colnames(revmasonrmagt) = txt
+revrmaonmasgt = cbind(test20$correlation, test22$correlation, test24$correlation)
+colnames(revrmaonmasgt) = txt
+
+# Correlation from MAS5 transformation matrix applied to RMA normalised data:
+revmasonrmagt
+
+# Correlation from RMA transformation matrix applied to MAS5 normalised data:
+revrmaonmasgt
+
+```
+
+It is quite hard to tell what's going on, especially when the correlation between different pathways are so different to one another, as well as the correlation between different data set.
+It seems like the metagenes from MAS5 normalised data (RMA transformation matrix) tend to have lower metagene values compared to the RMA normalised data.
+
+Since the metagenes are so variable between different data sets (especially with Gatza pathway metagenes), the obesity metagenes were used instead to look at the effect of different transformation matrices and/or normalisation methods.
+The obesity metagenes, as you saw from the previous section, were very consistent across all the data set, so it will be ideal to look at the effect of transformation matrix and normalisation method.
+
+With obesity metagenes:
+
+```{r cache=T, warning=F, message=F}
+
+# 'reference' correlation
+test25 = getmeta(crstdrma, allobsname, obsmastransmat)
+test26 = getmeta(crstdmas, allobsname, obsrmatransmat)
+
+test27  = getmeta(gtrmastd,   allobsname, obsmastransmat)
+test28  = getmeta(gtmasstd,   allobsname, obsrmatransmat)
+test29  = getmeta(fmstdrma,   allobsname, obsmastransmat)
+test30  = getmeta(fmstdmas,   allobsname, obsrmatransmat)
+test31  = getmeta(crisstdrma, allobsname, obsmastransmat)
+test32 = getmeta(crisstdmas,  allobsname, obsrmatransmat)
+
+txt = c('Gatza', 'FM', 'Cris')
+
+revmasonrmaobs = cbind(test27$correlation, test29$correlation, test31$correlation)
+colnames(revmasonrmaobs) = txt
+revrmaonmasobs = cbind(test28$correlation, test30$correlation, test32$correlation)
+colnames(revrmaonmasobs) = txt
+
+# MAS5 transformation matrix on MAS5 normalised data:
+obsmastransres
+
+# RMA transformation matrix on RMA normalised data:
+obsrmatransres
+
+# Correlation from MAS5 transformation matrix applied to RMA normalised data:
+revmasonrmaobs
+
+# Correlation from RMA transformation matrix applied to MAS5 normalised data:
+revrmaonmasobs
+
+```
+
+Looking at the difference between MAS5 data (RMA transformation matrix) and RMA data (MAS5 transformation matrix), you can see that the metagenes from the MAS5 normalised data tend to have lower values compared to the RMA normalised data.
+
+However, this can also be seen between the metagenes from RMA data (RMA transformation matrix) and MAS5 (MAS5 transformation matrix) data.
+This suggests that, rather than the transformation matrix affecting the values of the metagenes, the metagene values are more dependent on the data in which the transformation matrices are applied to (i.e. the normalisation method used in that data).
+
+So, the normalisation method of the data in which the transformation matrices are made does not matter, but the normalisation method of the data the transformation matrices are being applied to does matter.
+(But I think it's the best to stick with the same normalisation method throughout the analyses).
+
+## Which pathways are the best predictor of the BMI metagenes?
+
+To figure out which pathway(s) the obesity-associated metagenes are most similar to, a linear model was constructed using the pathway metagenes.
+
+First, in a different data set to the one in which the obesity-associated genes were found, a linear model will be made with all or some of the Gatza pathways to predict the obesity-associated metagene.
+If any of the pathways are shown to be significant in the model, it is likely to be related to the obesity-associated metagene, and therefore should be able to predict the obesity metagene to an extent.
+
+Once the linear model is created in that data, the model can be used to predict the obesity metagene in the original data (i.e. in Creighton data).
+If the model is able to predict the obesity metagene in Creighton's data, it provides an evidence that the obesity-associated genes that Creighton's group have found were actually related to the significant pathways in the model, rather than the sample BMI or BMI status.
+
+```{r cache=T, warning=F, message=F}
+
+# First, drop some pathways that didn't look good over different data set, using the results from previous section
+# There were six pathways that were consistent across all three data sets:
+usepath = c("bcat_probes", "er_probes", "ifna_probes", "ifng_probes",
+			"myc_probes", "pr_probes")
+
+```
+
+Cris' data will be used to make the linear model (FM doesn't have BMI data, and Gatza data doesn't have clinical data).
+Wrangle Cris' data so it's in the right format to work with:
+
+```{r cache=T, warning=F, message=F}
+
+# Make bmiStatus column in Cris' clinical data:
+BMIStatus = crisclin$BMI
+for (i in 1:length(BMIStatus)) {
+	if (is.na(BMIStatus[i])){
+		BMIStatus[i] = 'NA'
+	} else {
+		if (BMIStatus[i] >= 30) {
+			BMIStatus[i] = 'obese'
+		} else if (BMIStatus[i] < 25) {
+			BMIStatus[i] = 'normal'
+		} else {
+			BMIStatus[i] = 'overweight'
+		}
+	}
+}
+crisclin = cbind(crisclin, bmiStatus = BMIStatus)
+names(crisclin)[26] = 'bmi'
+
+# metagene results from RMA (transmat and data) (Cris' data)
+gtmeta = test9$trans[,usepath]
+obsmeta = test17$trans
+
+# stick the metagenes with the clinical data to make one big data frame:
+alldata = cbind(crisclin, gtmeta, obsmeta)
+rownames(alldata) = gsub('[^_]*_','',rownames(alldata)) # change rownames into sample names
+alldata = alldata[-(which(is.na(alldata$bmi))),] # remove samples with no BMI data
+
+```
+
+The linear model will be made to predict Creighton's original obesity metagene.
+
+```{r cache=T, warning=F, message=F}
+
+# Create linear model:
+# Linear model with just BMI:
+fitA = lm(crobsgenes ~ bmi, alldata)
+summary(fitA)
+
+# Linear model with just BMI status:
+fitB = lm(crobsgenes ~ bmiStatus, alldata)
+summary(fitB)
+
+# Linear model with BMI and BMI status:
+fitC = lm(crobsgenes ~ bmi + bmiStatus, alldata)
+summary(fitC)
+
+# Linear model with BMI, BMI status and pathway metagenes:
+fit2 = lm(crobsgenes ~ bmi + bmiStatus + bcat_probes + er_probes + ifna_probes
+		  + ifng_probes + myc_probes + pr_probes, alldata)
+summary(fit2)
+
+# Linear model with pathway metagenes only:
+fit3 = lm(crobsgenes ~ bcat_probes + er_probes + ifna_probes + ifng_probes
+		  + myc_probes + pr_probes, alldata)
+summary(fit3)
+
+# Linear model with PR pathway metagene only:
+fit4 = lm(crobsgenes ~ pr_probes, alldata)
+summary(fit4)
+
+```
+
+In the first linear model, BMI itself was not significant.
+This was also true with just BMI status, but when both BMI and BMI status were in the model, the obese group became significant.
+
+When the pathways were added to this model, the only significant pathway out of the 6 pathways chosen was the PR pathway.
+In fact, PR pathway on its own was significant (see fit4 result).
+
+Each of the linear models were used to predict the obesity metagene in Creighton's data.
+The correlation between the predicted obesity metagene and the actual obesity metagene in Creighton's data.
+If the correlation is high, it shows that the model is able to predict the obesity metagene accurately.
+
+```{r cache=T, warning=F, message=F}
+
+# Predict obesity metagene in Creighton's data, using the linear model from the previous section:
+
+# Make the data:
+
+# metagene results from RMA (transmat and data) (Creighton's data)
+gtmeta = test7$trans[,usepath]
+obsmeta = test11$trans
+crdata = cbind(crclin, gtmeta, obsmeta)
+rownames(crdata) = gsub('.CEL','',rownames(crdata))
+
+# Predict the BMI metagene based on the linear model created:
+prediction1 = predict(fitC, crdata, se.fit = T)
+cor(prediction1$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction1$fit, crdata$crobsgenes, method = 'pearson')
+
+prediction2 = predict(fit2, crdata, se.fit = T)
+cor(prediction2$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction2$fit, crdata$crobsgenes, method = 'pearson')
+
+prediction3 = predict(fit3, crdata, se.fit = T)
+cor(prediction3$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction3$fit, crdata$crobsgenes, method = 'pearson')
+
+prediction4 = predict(fit4, crdata, se.fit = T)
+cor(prediction4$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction4$fit, crdata$crobsgenes, method = 'pearson')
+
+```
+
+As you can see, the correlation is very low in the model that contains the BMI/BMI status variable (fitC and fit2 models).
+However, the correlation is still not great with the pathways-only models (fit3 and fit4).
+This shows that, although the PR pathway was significant in the model, it was still not good enough to predict the obesity metagene.
+This suggests that the obesity metagene have additional mechanisms that cannot be explained by the PR pathway on its own.
+
+The lack of correlation can be seen in the scatter plot of the predicted metagene vs. the actual obesity metagene (shown below).
+In the models that include the BMI/BMI status, the scatter plot looks like the prediction and the actual metagenes are completely uncorrelated.
+The scatter plots that used the pathways-only model shows some correlation, but very weak as the points are quite wide-spread.
+
+```{r cache=T, warning=F, message=F, fig.height=10, fig.width=10}
+
+# scatter plot of actual BMI metagene vs. predicted BMI metagene:
+par(mfrow=c(2,2))
+plot(crdata$crobsgenes, prediction1$fit, ylab="Predicted BMI metagene" ,
+	 xlab="Creighton BMI metagene" , main="BMI and BMI status model" , pch=20)
+
+plot(crdata$crobsgenes, prediction2$fit, ylab="Predicted BMI metagene"
+	 , xlab="Creighton BMI metagene" , main="BMI, BMI status and pathway model"
+	 , pch=20)
+
+plot(crdata$crobsgenes, prediction3$fit, ylab="Predicted BMI metagene" ,
+	 xlab="Creighton BMI metagene" , main="Pathway only model" , pch=20)
+
+plot(crdata$crobsgenes, prediction4$fit, ylab="Predicted BMI metagene" ,
+	 xlab="Creighton BMI metagene" , main="PR pathway only model" , pch=20)
+
+```
+
+## Future Directions
+
+Firstly, I have only made a model for Creighton's original obesity metagene, but not the other obesity metagenes that I have found in part 1 of my project.
+I doubt the results for those obesity metagenes would be any different from the Creighton's original metagene, but it's worth a try.
+
+For the model creation, I have left out all other pathways that were not consistent across all the data set, but it will be good to check if any of those pathways will make any difference in the results.
+However, because the pathways are variable between different data sets, it may not provide good insight into the actual biological mechanism of the obesity metagenes.
+
+Another thing to consider would be to see if there is any cohort effect in Cris' data that is affecting the results of the model.
+It could be that the inconsistency of the Gatza pathway metagenes in Cris' data is due to the different sample cohort.
+I could split the data into cohort A and B, then make the metagenes in each cohort and repeat the prediction.
+Or, maybe I could correct for the batch effect (as in Gatza's data) in Cris' data and repeat the analysis.

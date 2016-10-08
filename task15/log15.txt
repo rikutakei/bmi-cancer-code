@@ -10,6 +10,90 @@ Shape up all of the function I have used as well and put it in functions_final.R
 	- remove all of the functions that I don't need, OR
 	- improve any of the functions that I will be using
 
+===============================================================================
+
+23 September 2016
+
+-------------------------------------------------------------------------------
+
+NOTE: The initial investigation of obesity metagenes (from Creighton and FM paper) was done using gene symbols, because the ICGC data was already in gene symbol format, not gene probe ID format. Hence the results from the SVD/transformation matrix of these obesity metagenes may be slightly 'off' compared to their original paper.
+	- Decided to keep the previous methodology (i.e. convert gene probes into gene symbols)
+		- it's better to convert the gene probes into symbols, as you will be picking the best probe (out of multiple), rather than "multiplying" the expression of the symbols for all the gene probes it relates back to
+
+===============================================================================
+
+5 October 2016
+
+-------------------------------------------------------------------------------
+
+The continuous BMI genes have very high correlation with BMI in Creighton's data
+
+All of the genes correlated especially with the obese groups, but not the overweight group, and does not show a 'dose-dependent' response.
+
+All of the metagenes with unadjusted p-values correlated with the overweight group in BLCA (bladder cancer), but not the obese group.
+	- Only the residual and Caucasian-only residual metagenes significantly correlated with the sample BMI values.
+
+The p-value adjusted Caucasian-only metagene correlated with the overweight group in CESC (cervical cancer), but not the obese group.
+	- The metagene did not correlate with the BMI values of the samples.
+
+The p-value adjusted residual metagene correlated with the obese group in UCEC (endometrial cancer), but not the overweight group, and it also significantly correlated with the sample BMI values.
+
+None of the continuous BMI metagenes correlated with BMI status or BMI value of the samples in Cris' data
+
+It seems like the results are highly variable between the metagenes, especially in the adjusted p-value metagenes.
+
+The unadjusted p-value metagenes may be correlated with BLCA because of the amount of genes present in those metagenes (around 650 odd genes)
+	- Maybe, by chance, the gene signature contained genes specific for overweight samples in BLCA?
+
+===============================================================================
+
+6 October 2016
+
+-------------------------------------------------------------------------------
+
+Realised I have merged the rows in the gene symbol matrix wrong... (I think)
+
+Creighton's original obesity-associated genes correlated with BMI status in Creighton's data, but not in ICGC or Cris' data.
+
+The four metagenes found from DEG analysis (raw, residual, Caucasian-only, and Caucasian-only residual) all associated with sample BMI status (overweight group) significantly with BLCA (and no other cancer types).
+
+None of the overlap genes correlated significantly with the ICGC data.
+	- Creighton obesity genes are making it worse...?
+
+None of the eight DEG metagenes significantly correlated with sample BMI status in Cris' data.
+
+===============================================================================
+
+7 October 2016
+
+-------------------------------------------------------------------------------
+
+The Fuentes-Mattei metagenes were highly variable between the raw and standardised data
+	- Shows that FM gene signatures are worse than the Creighton's...?
+
+FM metagene did not correlate significantly with BMI status in Creighton's data
+
+FM metagene correlated significantly with overweight group (but not obese group) in BLCA cancer type, but not the other cancer types.
+
+FM metagene did not correlate significantly (ANOVA) with BMI status in Cris' data
+	- correlated significantly with overweight group, but ANOVA p-value was not significant
+
+-----+---+-----
+Cont. BMI stuff
+-----+---+-----
+
+No genes significantly correlated with sample BMI
+	- take top 799 genes correlating with BMI, then compare it with other metagenes to show that it's no different
+
+The top 799 genes did not show any significant association with sample BMI status or BMI in Cris' data and ICGC data
+
+Repeated it with top 100 genes instead of 799 genes
+	- same results as the top 799 genes
+
+Conclusion: There are no genes that significantly correlate with BMI as a continuous variable, and does not associate with sample BMI status and BMI in other cancer data.
+
+
+
 
 
 

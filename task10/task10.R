@@ -145,13 +145,3 @@ sample_test2 = function(files = files, samples = samples, mat, n = 100, p = 0.05
     }
     return(mat)
 }
-
-
-
-
-
-
-
-
-
-

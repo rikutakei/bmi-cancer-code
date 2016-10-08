@@ -1,5 +1,5 @@
 *.swp
-*.R*
+.R*
 *.pdf
 task14/task14_cache
 task14/task14_files
