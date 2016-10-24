@@ -11,11 +11,43 @@ setwd('/home/riku/Documents/masters/data/task15')
 # load(".RData")
 
 ## load functions:
-source('/home/riku/Documents/codes/bmi-cancer-code/task15/functions_final.R')
+# source('/home/riku/Documents/codes/bmi-cancer-code/task15/functions_final.R')
+source('~/scratch/task15/functions_final.R')
+
+source('https://bioconductor.org/biocLite.R')
+install.packages(GMD)
+install.packages(colorRamps)
+install.packages(data.table)
+install.packages(gplots)
+install.packages(lattice)
+install.packages(sva)
+
+## heatmap stuff
+install.packages(devtools)
+devtools::install_github("TomKellyGenetics/heatmap.2x", ref="master")
+
+## libraries for data wrangling
+install.packages(WGCNA)
+install.packages(dplyr)
+install.packages(hgu133a.db)
+install.packages(tidyr)
+
+## libraries for DEG analysis
+install.packages(edgeR)
+install.packages(DESeq)
+install.packages(affy)
+install.packages(limma)
+
+## libraries for pathway analysis
+install.packages(GO.db)
+install.packages(KEGG.db)
+install.packages(org.Hs.eg.db)
+install.packages(reactome.db)
+
 
 ## load libraries:
-# library(RColorBrewer)
 # library(mclust)
+library(RColorBrewer)
 library(GMD)
 library(colorRamps)
 library(data.table)
@@ -35,7 +67,7 @@ library(hgu133a.db)
 library(tidyr)
 
 ## libraries for DEG analysis
-# library(edgeR)
+library(edgeR)
 library(DESeq)
 library(affy)
 library(limma)
@@ -53,6 +85,7 @@ source('http://faculty.ucr.edu/~tgirke/Documents/R_BioCond/My_R_Scripts/overLapp
 ## LOAD DATA
 
 # source("load_data.R")
+# source("shortcut.R")
 
 # Load Creighton et al data:
 
@@ -80,6 +113,9 @@ crobsgenes = as.vector(crobsgenes[,1])
 # load clinical data:
 crclin = read.csv('./clindata/crclin.csv', sep=',', header=T)
 rownames(crclin) = crclin$geo_accession
+
+# Save data:
+save(crrma, crmas, crmstdrma, crstdmas, crclin, file = 'shortcutData/cr_data.txt')
 
 ###############################################################################
 ## Fuentes-Mattei et al data:
@@ -110,6 +146,9 @@ fmobsgenes = read.csv('./obsgenes/fmobsgenes.txt', header=T)
 # load clinical data:
 fmclin = read.csv('./clindata/fmclin.csv', sep=',', header=T)
 rownames(fmclin) = gsub('[ ()]', '_', fmclin$Sample.name)
+
+# Save data:
+save(fmrma, fmmas, fmstdrma, fmstdmas, fmclin, 'shortcutData/fm_data.txt')
 
 ###############################################################################
 ## Cris Print's Breast cancer data:
@@ -150,6 +189,9 @@ bmiStatus[bmiStatus >= 30] = 'obese'
 bmiStatus[bmiStatus < 25] = 'normal'
 bmiStatus[bmiStatus < 30] = 'overweight'
 crisclin = cbind(crisclin, bmiStatus = bmiStatus)
+
+# Save data:
+save(crisrma, crismas, crisstdrma, crisstdmas, crisclin, 'shortcutData/cris_data.txt')
 
 ###############################################################################
 ## Gatza et al. cancer data:
@@ -234,6 +276,9 @@ for (i in 1:length(files)) {
 paths = gsub('./gatzagenelist/', '', files)
 paths = gsub('.txt', '', paths)
 
+# Save data:
+save(gatzarma, gatzamas, gtrmastd, gtmasstd, 'shortcutData/gatza_data.txt')
+
 ###############################################################################
 ## ICGC data:
 
@@ -246,19 +291,19 @@ cancerbmi = paste('./clindata/TCGA/', tolower(files), sep='')
 cancerbmi = paste(cancerbmi, '_clinical_patient.txt', sep='')
 for (i in 1:length(files)) {
 	## process sequence data:
-	seq = read.table(cancerfiles[i], sep = '\t', header=T)
-	seq = tbl_df(seq)
-	dup = duplicated(paste(seq$submitted_sample_id,seq$gene_id,sep=''))
-	seq = seq[!dup,c('submitted_sample_id','gene_id','raw_read_count')]
-	genes = unique(seq$gene_id)
-	seq  = spread(seq,submitted_sample_id,raw_read_count)
-	rownames(seq) = genes
-	seq  = data.matrix(seq)
-	seq = seq[-1,-1]
-	seq = icgc_to_tcga(t(seq))
-    if (length(rownames(seq)) > length(unique(rownames(seq)))) {
-        seq = collapseRows(seq, unique(rownames(seq)), unique(rownames(seq)))
-        seq = seq$datETcollapsed
+	mat = read.table(cancerfiles[i], sep = '\t', header=T)
+	mat = tbl_df(mat)
+	dup = duplicated(paste(mat$submitted_sample_id,mat$gene_id,sep=''))
+	mat = mat[!dup,c('submitted_sample_id','gene_id','raw_read_count')]
+	genes = unique(mat$gene_id)
+	mat  = spread(mat,submitted_sample_id,raw_read_count)
+	rownames(mat) = genes
+	mat  = data.matrix(mat)
+	mat = mat[-1,-1]
+	mat = icgc_to_tcga(t(mat))
+    if (length(rownames(mat)) > length(unique(rownames(mat)))) {
+        mat = collapseRows(mat, unique(rownames(mat)), unique(rownames(mat)))
+        mat = mat$datETcollapsed
     }
 
 	## process clinical data:
@@ -274,9 +319,9 @@ for (i in 1:length(files)) {
 		clin = clin[-which(clin$weight == "[Not Available]"),]
 	}
 
-	## Remove samples that are not in the sequence data:
-	seq = seq[which(rownames(seq) %in% rownames(clin)),]
-	clin = clin[which(rownames(clin) %in% rownames(seq)),]
+	## Remove samples that are not in the matuence data:
+	mat = mat[which(rownames(mat) %in% rownames(clin)),]
+	clin = clin[which(rownames(clin) %in% rownames(mat)),]
 
 	## Calculate BMI and BMI status:
 	bmi = as.numeric(as.vector(clin$weight))/((as.numeric(as.vector(clin$height))/100)^2)
@@ -289,7 +334,7 @@ for (i in 1:length(files)) {
 	clin = cbind(clin, bmi, bmiStatus)
 
 	## assign variable names:
-	assign(paste(files[i], 'raw', sep = ''), seq)
+	assign(paste(files[i], 'raw', sep = ''), mat)
 	assign(paste(files[i], 'clin', sep=''), clin)
 }
 
@@ -300,6 +345,9 @@ for (i in 1:length(files)) {
 	txt = paste(files[i], 'std', sep='')
 	assign(txt, t(mat))
 }
+
+# Save data:
+save(BLCAraw, BLCAstd, BLCAclin, CESCraw, CESCstd, CESCclin, COADraw, COADstd, COADclin, KIRPraw, KIRPstd, KIRPclin, LIHCraw, LIHCstd, LIHCclin, READraw, READstd, READclin, SKCMraw, SKCMstd, SKCMclin, UCECraw, UCECstd, UCECclin, 'shortcutData/icgc_data.txt')
 
 ## TODO: clean the sample names of ICGC/TCGA and Gatza data
 ###############################################################################
@@ -322,6 +370,9 @@ crissymrmastd = standardise_data(crissymrma, log = F)
 crissymmasstd = standardise_data(crissymmas, log = F)
 gatzasymrmastd = standardise_data(gatzasymrma, log = F)
 gatzasymmasstd = standardise_data(gatzasymmas, log = F)
+
+## Save the data:
+save(crsymrma, crsymmas, crsymrmastd, crsymmasstd, fmsymrma, fmsymmas, fmsymrmastd, fmsymmasstd, crissymrma, crissymmas, crissymrmastd, crissymmasstd, gatzasymrma, gatzasymmas, gatzasymrmastd, gatzasymmasstd, 'shortcutData/symmat_data.txt')
 
 ###############################################################################
 ## Pathway data base:
@@ -353,7 +404,6 @@ for(i in 1:length(gopath)) tmp[[i]] = gopath[[i]]@Term
 names(tmp) = names(gopath)
 gopath = tmp
 
-## TODO: Do I really need this bit of code?
 #Import Human Reactome pathways
 reactome.list = as.list(reactomeEXTID2PATHID)
 reactome.list = reactome.list[order(as.numeric(names(reactome.list)))] #Sort the names in the list:
@@ -363,6 +413,9 @@ reactomepath = as.list(reactomePATHID2NAME) #mapping reactome path IDs to human 
 reactomepath = reactomepath[grep('Homo sapiens',reactomepath)] #pull out all human-related pathways
 reactomepath = lapply(reactomepath, function(x) gsub('Homo sapiens: ', '', x)) #cut out the 'Homo sapiens: ' bit so it's only the pathway names.
 reactomepath = lapply(reactomepath, function(x) return(x[1])) #cut out the 'Homo sapiens: ' bit so it's only the pathway names.
+
+## Save pathway databases (raw):
+save(keggpath, reactomepath, gopath, file = 'rawpath_data.txt')
 
 save.image()
 
@@ -432,12 +485,12 @@ crtransmatstd = make_trans_mat(crobsmatstd)
 ## Pull out the obesity-associated genes from the ICGC data:
 cancertypes = c('BLCA', 'CESC', 'COAD', 'KIRP', 'LIHC', 'READ', 'SKCM', 'UCEC')
 for (i in 1:length(cancertypes)) {
-	var = paste(cancertypes[i], 'raw', sep='')
-	seq = get(var)
-	seq = seq[,commongenes]
-	seq = t(seq) ## make it genes by samples
+	txt = paste(cancertypes[i], 'raw', sep='')
+	mat = get(txt)
+	mat = mat[,commongenes]
+	mat = t(mat) ## make it genes by samples
 	txt = paste(cancertypes[i], 'cr', sep='')
-	assign(txt, seq)
+	assign(txt, mat)
 }
 
 ## check if it has the right number of genes:
@@ -446,10 +499,10 @@ dim(BLCAcr) # 644 genes
 ## log10 and standardise data:
 for (i in 1:length(cancertypes)) {
 	txt = paste(cancertypes[i], 'cr', sep='')
-	seq = get(txt)
-	seq = standardise_data(seq)
+	mat = get(txt)
+	mat = standardise_data(mat)
 	txt = paste(txt, 'std', sep='')
-	assign(txt, seq)
+	assign(txt, mat)
 }
 
 ## Check for any differences in the metagenes produced from raw or standardised
@@ -977,10 +1030,10 @@ dev.off()
 cancertypes = c('BLCA', 'CESC', 'COAD', 'KIRP', 'LIHC', 'READ', 'SKCM', 'UCEC')
 for (i in 1:length(cancertypes)) {
 	txt = paste(cancertypes[i], 'std', sep='')
-	seq = t(get(txt))
-	seq = seq[tmpgenes,]
+	mat = t(get(txt))
+	mat = mat[tmpgenes,]
 	txt = paste(cancertypes[i], 'fm', sep='')
-	assign(txt, seq)
+	assign(txt, mat)
 }
 
 ## Transform the ICGC data:
@@ -1119,11 +1172,14 @@ percentile = apply(cancerdegres, 1, function(x) quantile(x, 0.95))
 ## Pathway enrichment analyses on all of the DEGs found so far (Creighton, FM,
 ## ICGC data)
 
+# source('path_enrich.R')
+
 # Make a gene-by-pathway matrix to use it in the pathway enrichment analysis
 
 # KEGG matrix
-pathnames = unique(unlist(keggpath)) #Get all the pathways in the keggpath list
 genenames = colnames(BLCAraw) #Get all the gene names in the cancer data
+save(genenames, 'shortcutData/icgcgenenames.txt') # save the genenames in separate data
+pathnames = unique(unlist(keggpath)) #Get all the pathways in the keggpath list
 tmp = matrix(nrow = length(genenames), ncol = length(pathnames)) #make an empty matrix to fill
 colnames(tmp) = pathnames
 rownames(tmp) = genenames
@@ -1157,7 +1213,6 @@ reactomeTFmat = ifelse(tmp == F, 0, 1)
 # using the pathways relevant to the genes in the cancer data.
 goentrez = GO.list[genenames] ## pull out pathways that are relevant
 goentrez = goentrez[which(!is.na(names(goentrez)))] #remove NAs
-genenames = names(goentrez) #update genenames
 goentrez = unique(unlist(goentrez)) #get unique entrezID
 
 pathnames = gopath[goentrez] ## pull out necessary paths using the entrezID
@@ -1181,477 +1236,677 @@ keggTFmat = keggTFmat[,!apply(keggTFmat==0, 2, all)]
 goTFmat = goTFmat[,!apply(goTFmat ==0, 2, all)]
 reactomeTFmat = reactomeTFmat[,!apply(reactomeTFmat==0, 2, all)]
 
-##save the files as txt
-dput(keggTFmat, file = 'kegggenebypath.txt')
-dput(reactomeTFmat, file = 'reactomegenebypath.txt')
-dput(goTFmat, file = 'gogenebypath.txt')
+## Save pathway databases:
+save(keggTFmat, reactomeTFmat, goTFmat, file = 'tfmat_data.txt')
 
-# Pathway enrichment analysis function
-# It should take in DEGs and pull out relevant data from a pre-made
-# gene-by-pathway matrix.
-# deg should be in the top table format (containing only significant genes)
-# db is the type of database you want to use in string format (i.e. 'KEGG',
-# 'reactome', or 'GO')
+###############################################################################
+# Rank-based enrichment analysis (each cancer type separately)
 
-pathenrich = function(deg, db, gn = genenames) {
-    #check which database you're using
-    if (db == "KEGG") {
-        db = keggTFmat
-    } else if (db == "GO") {
-        db = goTFmat
-    } else {
-        db = reactomeTFmat
-    }
+## Use the path_enrich() function to find the enriched pathways between the
+## obese and non-obese samples in the ICGC cancer data:
+reslist = list()
+for (i in 1:length(cancertypes)) {
+	mat = t(get(paste(cancertypes[i], 'raw', sep = '')))
+	clin = get(paste(cancertypes[i], 'clin', sep = ''))
+	tmplist = list()
+	tmplist[[1]] = path_enrich(mat, clin, keggTFmat)
+	tmplist[[2]] = path_enrich(mat, clin, reactomeTFmat)
+	tmplist[[3]] = path_enrich(mat, clin, goTFmat)
+	names(tmplist) = c('KEGG', 'Reactome', 'GO')
+	reslist[[i]] = tmplist
+}
+names(reslist) = cancertypes
 
-    ##pull out relevant genes from the TF mat of the database
-    #mat = db[which(rownames(db) %in% rownames(deg)),]
-    ##remove columns with 0s (i.e. pathways with no DEGs)
-    #mat = mat[,!apply(mat==0, 2, all)]
+###############################################################################
+# Rank-based enrichment analysis (all cancer types combined)
 
-    # matrix to dump the p-values of the pathway enrichment
-    v = matrix(nrow = ncol(db), ncol = 1, dimnames = list(colnames(db),'p.value'))
-    x = gn %in% rownames(deg)
-    for (i in 1:ncol(db)){
-        y = gn %in% rownames(db)[db[,i]==1]
-        if(length(table(y)) > 1 ) { ##do Fisher's test only if there is a '1' inthere
-            f = fisher.test(table(x,y))
-            v[i,1] = f$p.value
-        } else {
-            v[i,1] = NA
-        }
-    }
+## First try with Voom normalising individual cancer types separately, then
+## batch correct with ComBat:
+pdf(file='pdf/voom_pdf/per_cancer_voom.pdf', width=7, height=7)
+# pdf(file='pdf/voom_pdf/per_cancer_voom(nullGroup).pdf', width=7, height=7)
+# pdf(file='pdf/voom_pdf/per_cancer_voom(5percent).pdf', width=7, height=7)
+samplename = rownames(BLCAraw)
+batchinfo = rep('BLCA', nrow(BLCAraw))
+group = ifelse(BLCAclin$bmiStatus == 'obese', 'obese', 'non-obese')
+allcancer = voom_norm(t(BLCAraw), group, plot = T)
+# allcancer = voom_norm(t(BLCAraw), group = NULL, plot = T)
+# allcancer = voom_norm(t(BLCAraw), group, dropout = 0.05, plot = T)
+allcancer = tbl_df(t(allcancer))
+for (i in 2:length(cancertypes)) {
+	mat = get(paste(cancertypes[i], 'raw', sep=''))
+	clin = get(paste(cancertypes[i], 'clin', sep=''))
+	samplename = c(samplename, rownames(mat))
+	batchinfo = c(batchinfo, rep(cancertypes[i], nrow(mat)))
+	group = ifelse(clin$bmiStatus == 'obese', 'obese', 'non-obese')
+	mat = voom_norm(t(mat), group, plot = T)
+	# mat = voom_norm(t(mat), group = NULL, plot = T)
+	# mat = voom_norm(t(mat), group, dropout = 0.05, plot = T)
+	mat = tbl_df(t(mat))
+	allcancer = full_join(allcancer, mat)
+}
+dev.off()
+allcancer = as.matrix(allcancer)
+rownames(allcancer) = samplename
+allcancer = t(allcancer)
+allcancer = allcancer[which(complete.cases(allcancer)),]
+dim(allcancer) ## 20494 genes by 1872 samples
+# dim(allcancer) ## 13630 genes by 1872 samples after 5% dropout
 
-    return(v)
+batchinfo = cbind(samplename, batchinfo)
+mod = model.matrix(~1, data = as.data.frame(batchinfo))
+allcancer = ComBat(dat = allcancer, batch = batchinfo[,2], mod = mod)
+
+## Try Voom normalising all of the cancer types after merging, then batch
+## correct with ComBat:
+samplename = rownames(BLCAraw)
+batchinfo = rep('BLCA', nrow(BLCAraw))
+bmidata = as.character(BLCAclin$bmiStatus)
+allcancer2 = tbl_df(BLCAraw)
+for (i in 2:length(cancertypes)) {
+	mat = get(paste(cancertypes[i], 'raw', sep=''))
+	clin = get(paste(cancertypes[i], 'clin', sep=''))
+	samplename = c(samplename, rownames(mat))
+	batchinfo = c(batchinfo, rep(cancertypes[i], nrow(mat)))
+	bmidata = c(bmidata, as.character(clin$bmiStatus))
+	mat = tbl_df(mat)
+	allcancer2 = full_join(allcancer2, mat)
+}
+allcancer2 = as.matrix(allcancer2)
+rownames(allcancer2) = samplename
+allcancer2 = t(allcancer2)
+allcancer2 = allcancer2[which(complete.cases(allcancer2)),]
+dim(allcancer2) ## 20494 genes by 1872 samples
+
+group = ifelse(bmidata == 'obese', 'obese', 'non-obese')
+pdf(file='pdf/voom_pdf/all_cancer_voom.pdf', width=7, height=7)
+# pdf(file='pdf/voom_pdf/all_cancer_voom(nullGroup).pdf', width=7, height=7)
+# pdf(file='pdf/voom_pdf/all_cancer_voom(5percent).pdf', width=7, height=7)
+allcancer2 = voom_norm(allcancer2, group, plot = T)
+# allcancer2 = voom_norm(allcancer2, group = NULL, plot = T)
+# allcancer2 = voom_norm(allcancer2, group, dropout = 0.05, plot = T)
+dev.off()
+# dim(allcancer2) ## 19469 genes by 1872 samples after 5% dropout
+
+batchinfo = cbind(samplename, batchinfo)
+mod = model.matrix(~1, data = as.data.frame(batchinfo))
+allcancer2 = ComBat(dat = allcancer2, batch = batchinfo[,2], mod = mod)
+
+###############################################################################
+## See what the difference in the metagene are between per-cancer normalised
+## data set and the all-cancer normalised data set
+
+## Use Creighton's metagene to test the correlation between the two data sets
+commongenes = mapIds(hgu133a.db, keys = crobsgenes, column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+commongenes = commongenes[which(!is.na(commongenes))]
+commongenes = unique(commongenes)
+commongenes = commongenes[which(commongenes %in% rownames(allcancer))]
+
+## Get Creighton metagene from each cancertype (voom normalised individually):
+percancermeta = list()
+percancermat = list()
+for (i in 1:length(cancertypes)) {
+	mat = get(paste(cancertypes[i], 'raw', sep=''))
+	clin = get(paste(cancertypes[i], 'clin', sep=''))
+	group = ifelse(clin$bmiStatus == 'obese', 'obese', 'non-obese')
+	mat = voom_norm(t(mat), group)
+	percancermat[[i]] = mat
+	mat = mat[commongenes,]
+	meta = make_metagene(mat, flip = F, raw = T)
+	percancermeta[[i]] = meta
 }
 
-#set genenames to all 20501 genes in the  cancer data
-genenames = rownames(BLCAmat)
+## Get Creighton metagene from the combined cancer data set:
+samplename = rownames(BLCAraw)
+bmidata = as.character(BLCAclin$bmiStatus)
+tmpallcancer = tbl_df(BLCAraw)
+for (i in 2:length(cancertypes)) {
+	mat = get(paste(cancertypes[i], 'raw', sep=''))
+	clin = get(paste(cancertypes[i], 'clin', sep=''))
+	samplename = c(samplename, rownames(mat))
+	bmidata = c(bmidata, as.character(clin$bmiStatus))
+	mat = tbl_df(mat)
+	tmpallcancer = full_join(tmpallcancer, mat)
+}
+tmpallcancer = as.matrix(tmpallcancer)
+rownames(tmpallcancer) = samplename
+tmpallcancer = t(tmpallcancer)
+tmpallcancer = tmpallcancer[which(complete.cases(tmpallcancer)),]
+dim(tmpallcancer) ## 20494 genes by 1872 samples
 
-##This function does path enrichment analysis n times on a single cancer type
-# dat is the cancer data, sample_dat is the sample distribution in original data (normal/overweight/obese), gn is a vector containing all the genes in the cancer data (i.e. rownames(BLCAmat)), n is the number of analyses to be carried out.
-npathenrich = function(dat, sample_dat, gn = genenames, n = 100, db = "KEGG"){
-    for(i in 1:n) {
-        #pick samples randomly
-        group = sample(seq(sum(sample_dat)),sample_dat[3], replace = F)
-        #make a vector out of the randomly chosen samples
-        group = seq(sum(sample_dat)) %in% group
-        #make model matrix using the randomly chosen samples.
-        design = model.matrix(~group)
-        #normalise the data
-        x = normVoom(dat, design)
-        #make top table from the data
-        tt = make_tt(x, design)
-        # pull out DEGs
-        deg = pull_deg(tt)
+group = ifelse(bmidata == 'obese', 'obese', 'non-obese')
+tmpallcancer = voom_norm(tmpallcancer, group)
 
-        tmppath = pathenrich(deg, db, gn = genenames)
+crtmpallcancer = tmpallcancer[commongenes,]
+allcancermeta = make_metagene(crtmpallcancer, flip = F, raw = T)
+names(allcancermeta) = samplename
 
-        if(i == 1) {
-            mat = tmppath
-        } else if (i > 1){
-            mat = cbind(mat, tmppath)
-        }
-    }
-    return(mat)
+## Split the metagene into 8 different cancertypes:
+tmp = list()
+for (i in 1:length(cancertypes)) {
+	mat = get(paste(cancertypes[i], 'raw', sep=''))
+	tmp[[i]] = allcancermeta[which(names(allcancermeta) %in% rownames(mat))]
+}
+allcancermeta = tmp
+
+## Correlation of the raw metagenes:
+tmp = percancermeta
+tmp2 = allcancermeta
+
+rawmetacor = list()
+for (i in 1:length(tmp)) {
+	correlation = cor(tmp[[i]], tmp2[[i]], method = 'spearman')
+	rawmetacor[[i]] = correlation
 }
 
+## Correlation of the ranked metagenes:
+tmp = lapply(percancermeta, function(x) rank(x)/length(x))
+tmp2 = lapply(allcancermeta, function(x) rank(x)/length(x))
 
-#############################################################################
-# start pathway enrichment analysis:
-#############################################################################
-
-#begin by doing the pathway enrichment analysis on the ob vs lean/ov on each
-# cancer type
-
-files = gsub('mat','bmi',files)
-
-originalpathlist = originalList
-
-## do pathway enrichment analysis on each cancer type
-originalpathlist = lapply(seq_along(originalpathlist), function(x) {
-                       group = get(files[x])[,4]
-                       group = ifelse(group == 'obese', 'obese', 'normal/overweight')
-                       model = model.matrix(~group)
-                       dat = originalpathlist[[x]]
-                       dat = normVoom(dat, model)
-                       tt = make_tt(dat, model)
-                       deg = pull_deg(tt)
-                       path = pathenrich(deg, db = "GO", gn = rownames(dat))
-})
-
-## adjust the p-values using FDR:
-originalpathlist = lapply(originalpathlist, function(x) {
-                        p.adj = p.adjust(x, method = 'BH', n = nrow(x))
-                        x = cbind(x, p.adj)
-})
-
-## pull out the names of enriched paths:
-enrpaths = lapply(originalpathlist, function(x) {
-                  ind = which(x[,2] <= 0.05)
-                  rownames(x)[ind]
-})
-
-names(enrpaths) = gsub('bmi', '', files)
-
-## ready to do the pathway enrichment analysis:
-
-set.seed(1) ##set the seed for reproducibility
-
-#make copy just in case
-ntestrun = originalList
-
-# repeat the test run, but with npathenrich function instead of pathenrich:
-ntestrun = lapply(seq_along(ntestrun ), function(x) {
-                          dat = ntestrun [[x]]
-                          path = npathenrich( dat, sample_dat = samples[x,] ,n = 10, db = "GO", gn = rownames(dat))
-})
-
-ntestrun2 = ntestrun
-
-ntestrun2 = lapply(ntestrun2 , function(x) {
-                   tmp = apply(x, 2, function(y) p.adjust(y, method = 'BH', n = length(y)))
-                   colnames(tmp) = paste('adj.', colnames(tmp), sep = '')
-                   return(tmp)
-})
-
-## So, the iteration for the Fisher's test-based enrichment analysis is working
-## Now I'll have to look into a rank-based enrichment analysis
-
-###############################################################################
-# Rank-based enrichment analysis
-###############################################################################
-
-## test out the camera function on the BLCA dataset
-test = originalList[[1]]
-
-## Make a design matrix:
-group = BLCAbmi[,4]
-group = ifelse(group == 'obese', 'obese', 'normal/overweight')
-design = model.matrix(~group)
-
-## normalise the data with normVoom()
-test = normVoom(test, design)$E
-
-## need to make a list of indices (that describe what genes are in each pathway) for the camera function:
-goind = split(goTFmat, rep(1:ncol(goTFmat), each = nrow(goTFmat)))
-names(goind) = colnames(goTFmat)
-
-## lapply the list so that it contains the genenames involved in the pathway
-## This list will be used as the index in the camera function
-genenames = rownames(test)
-goind = lapply(goind, function(x) genenames[which(x == 1)])
-
-## use the camera function in limma package
-test = camera(test, goind, design)
-
-## use the roast function to see if it does any better:
-test2 = roast(test, goind, design)
-
-###############################################################################
-# try camera on all the cancer types
-###############################################################################
-
-files = gsub('mat', 'bmi', files)
-
-test = originalList
-
-# default starting index list for lapply
-goind = split(goTFmat, rep(1:ncol(goTFmat), each = nrow(goTFmat)))
-names(goind) = colnames(goTFmat)
-
-test = lapply(seq_along(test), function(x) {
-              # make model matrix from bmi info
-              group = get(files[x])
-              group = group[,4]
-              group = ifelse(group == 'obese', 'obese', 'normal/overweight')
-              design = model.matrix(~group)
-
-              # normalise RNA-seq data:
-              y = test[[x]]
-              #print(dim(y))
-              #print(count)
-
-              y = normVoom(y, design)$E
-
-              genenames = rownames(y)
-
-              # make index list for pathway genes:
-              ind = goind
-              ind = lapply(ind, function(z) genenames[which(z == 1)])
-
-              # pathway enrichment:
-              y = camera(y, goind, design, contrast = 2)
-})
-
-
-###############################################################################
-# try pathway enrichment analysis with all the samples from different cancer
-# types on the 'same scale'.
-###############################################################################
-
-## normalise the samples and put them on the same scale:
-
-## Combine all the samples from different cancer types:
-allsamples = cbind(BLCAmat, CESCmat, COADmat, KIRPmat, LIHCmat, READmat, SKCMmat, UCECmat)
-allbmi = rbind(BLCAbmi, CESCbmi, COADbmi, KIRPbmi, LIHCbmi, READbmi, SKCMbmi, UCECbmi)
-allbmi = allbmi[,4]
-
-## normalise using the bmi data:
-group = ifelse(allbmi == 'obese', 'obese', 'normal/overweight')
-design = model.matrix(~group)
-
-allsamplesnorm = normVoom(allsamples, design)$E
-
-## split the normalised data back into separate cancer types:
-files = gsub('bmi', 'mat', files)
-varnames = paste('scaled',files, sep='')
-for(i in 1:length(varnames)) {
-    sample = colnames(get(files[i]))
-    assign(varnames[i],allsamplesnorm[,sample])
+rankmetacor = list()
+for (i in 1:length(tmp)) {
+	correlation = cor(tmp[[i]], tmp2[[i]], method = 'spearman')
+	rankmetacor[[i]] = correlation
 }
 
-scaledtest = list(scaledBLCAmat, scaledCESCmat, scaledCOADmat, scaledKIRPmat, scaledLIHCmat, scaledREADmat, scaledSKCMmat, scaledUCECmat)
+###############################################################################
+## Try the metagene comparison between per-cancer and combined cancer with IFNG
+## signature, and split the samples based on the IFNG signature (high vs. low)
 
-files = gsub('mat', 'bmi', files)
+## Convert gene probe IDs into symbols:
 
-scaledtest = lapply(seq_along(scaledtest), function(x) {
-              # make model matrix from bmi info
-              group = get(files[x])
-              group = group[,4]
-              group = ifelse(group == 'obese', 'obese', 'normal/overweight')
-              design = model.matrix(~group)
+commongenes = mapIds(hgu133a.db, keys = ifng_probes, column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+commongenes = commongenes[which(!is.na(commongenes))]
+commongenes = unique(commongenes)
+commongenes = commongenes[which(commongenes %in% rownames(allcancer))]
 
-              # normalise RNA-seq data:
-              y = scaledtest[[x]]
+## Get Creighton metagene from each cancertype (voom normalised individually):
+percancermeta = list()
+percancermat = list()
+for (i in 1:length(cancertypes)) {
+	mat = get(paste(cancertypes[i], 'raw', sep=''))
+	mat = voom_norm(t(mat), group = NULL)
+	percancermat[[i]] = mat
+	mat = mat[commongenes,]
+	meta = make_metagene(mat, flip = F, raw = T)
+	percancermeta[[i]] = meta
+}
 
-              genenames = rownames(y)
+## Get Creighton metagene from the combined cancer data set:
+samplename = rownames(BLCAraw)
+bmidata = as.character(BLCAclin$bmiStatus)
+tmpallcancer = tbl_df(BLCAraw)
+for (i in 2:length(cancertypes)) {
+	mat = get(paste(cancertypes[i], 'raw', sep=''))
+	samplename = c(samplename, rownames(mat))
+	mat = tbl_df(mat)
+	tmpallcancer = full_join(tmpallcancer, mat)
+}
+tmpallcancer = as.matrix(tmpallcancer)
+rownames(tmpallcancer) = samplename
+tmpallcancer = t(tmpallcancer)
+tmpallcancer = tmpallcancer[which(complete.cases(tmpallcancer)),]
+dim(tmpallcancer) ## 20494 genes by 1872 samples
 
-              # make index list for pathway genes:
-              ind = goind
-              ind = lapply(ind, function(z) genenames[which(z == 1)])
+tmpallcancer = voom_norm(tmpallcancer, group = NULL)
 
-              # pathway enrichment:
-              y = camera(y, goind, design, contrast = 2)
-})
+ifngtmpallcancer = tmpallcancer[commongenes,]
+allcancermeta = make_metagene(ifngtmpallcancer, flip = F, raw = T)
+names(allcancermeta) = samplename
 
+## Split the metagene into 8 different cancertypes:
+tmp = list()
+for (i in 1:length(cancertypes)) {
+	mat = get(paste(cancertypes[i], 'raw', sep=''))
+	tmp[[i]] = allcancermeta[which(names(allcancermeta) %in% rownames(mat))]
+}
+allcancermeta = tmp
 
+## Correlation of the raw metagenes:
+tmp = percancermeta
+tmp2 = allcancermeta
 
+rawmetacor = list()
+for (i in 1:length(tmp)) {
+	correlation = cor(tmp[[i]], tmp2[[i]], method = 'spearman')
+	rawmetacor[[i]] = correlation
+}
 
+## Correlation of the ranked metagenes:
+tmp = lapply(percancermeta, function(x) rank(x)/length(x))
+tmp2 = lapply(allcancermeta, function(x) rank(x)/length(x))
 
-
-
-
-
-
-
-
-
+rankmetacor = list()
+for (i in 1:length(tmp)) {
+	correlation = cor(tmp[[i]], tmp2[[i]], method = 'spearman')
+	rankmetacor[[i]] = correlation
+}
 
 ###############################################################################
-## Gatza pathway metagene analysis
+## Pathway enrichment analysis with per-cancer and combined-cancer normalised
+## data:
 
-## NOTE: From previous results on transformation matrix and SVD, standardised
-## data is used.
+## Load shortcut data:
+# load('shortcutData/allcancer.txt')
 
-# List of genes related to/representing each of the Gatza pathway:
+## Make clinical data for all cancer types:
+allbmi = c()
+for (i in 1:length(cancertypes)) {
+	clin = get(paste(cancertypes[i], 'clin', sep=''))
+	bmi = as.character(clin$bmiStatus)
+	allbmi = c(allbmi, bmi)
+}
+names(allbmi) = colnames(allcancer)
+allbmi = as.data.frame(allbmi)
+colnames(allbmi) = 'bmiStatus'
+
+## Path enrichment analysis using camera:
+cancermat = c('allcancer', 'allcancer2')
+db = c('keggTFmat', 'reactomeTFmat', 'goTFmat')
+enrichreslist = list()
+for (i in 1:length(cancermat)) {
+	mat = get(cancermat[i])
+	tmplist = list()
+	for (j in 1:length(db)) {
+		tmpdb = get(db[j])
+		tmplist[[j]] = path_enrich(mat, allbmi, tmpdb, norm = F)
+	}
+	names(tmplist) = db
+	enrichreslist[[i]] = tmplist
+}
+names(enrichreslist) = c('per-cancer', 'combined-cancer')
+
+###############################################################################
+## Gatza pathway analysis
+###############################################################################
+
+## First, check the directionality of the Gatza pathway metagenes so that they
+## produce similar results as their paper
+
+# List of genes representing/related to the pathway:
 checkgene = c('AKT1', 'CTNNB1', 'E2F1', 'EGFR', 'ESR1', 'ERBB2', 'IFNA1',
 			  'IFNG', 'MYC', 'TP53', 'TP63', 'PIK3CA', 'PGR', 'HRAS', 'SRC',
 			  'STAT3', 'TGFB1', 'TNF')
 
-## Get rank-based and probit metagene from RMA normalised data:
-flip = rep(F, 18) # Don't flip any metagene
-gtrmameta       = make_multi_meta(gtrmastd, paths, flip = flip, raw = T)
-gtrmarankmeta   = apply(gtrmameta, 1, function(x) rank(x)/length(x))
-gtrmaprobitmeta = apply(gtrmameta, 1, function(x) pnorm(scale(x)))
+path_symbol = paste(paths, '_sym', sep='')
+for (i in 1:length(paths)) {
+	gene = get(paths[i])
+	gene = mapIds(hgu133a.db, keys = gene, column = 'SYMBOL', keytype = "PROBEID", multiVals = 'first')
+	gene = c(gene[which(!is.na(gene))], checkgene[i])
+	gene = unique(gene)
+	gene = gene[which(gene %in% rownames(gatzasymrma))]
+	gene = gene[which(gene %in% rownames(gatzasymmas))]
+	assign(path_symbol[i], gene)
+}
+
+## Make metagenes for each pathway genes (gene probe IDs) in data sets, then
+## visualise it using the symbol matrix and pathway genes (gene symbols):
+
+## NOTE: standardised data were used (experience from Creighton metagene
+## results).
+
+## RMA normalised data:
+
+# Ranked metagenes:
+mgfliprma = c(
+			   # 'akt_probes',
+			   'bcat_probes',
+			   'e2f1_probes',
+			   'egfr_probes',
+			   # 'er_probes',
+			   'her2_probes',
+			   'ifna_probes',
+			   'ifng_probes',
+			   # 'myc_probes',
+			   'p53_probes',
+			   'p63_probes',
+			   'pi3k_probes',
+			   'pr_probes',
+			   # 'ras_probes',
+			   # 'src_probes',
+			   'stat3_probes',
+			   'tgfb_probes',
+			   'tnfa_probes'
+			  )
+flip = paths %in% mgfliprma
+meta = make_multi_meta(gtrmastd, paths, flip = flip, raw = T)
+rownames(meta) = gsub('_probes', '', rownames(meta))
+rmarankmeta = t(apply(meta, 1, function(x) convert_raw_meta(x, method = 'rank')))
+corrank = cor(t(rmarankmeta), method = 'pearson')
+
+pdf('pdf/gatza_pdf/gtrmastdrank.pdf')
+recreate_gatza(gatzasymrmastd, rmarankmeta, path_symbol, checkgene, type = 'ranked')
+dev.off()
+
+# Probit metagenes:
+mgflipprobit = c(
+				 # 'akt_probes',
+				 'bcat_probes',
+				 'e2f1_probes',
+				 'egfr_probes',
+				 # 'er_probes',
+				 'her2_probes',
+				 'ifna_probes',
+				 'ifng_probes',
+				 # 'myc_probes',
+				 'p53_probes',
+				 'p63_probes',
+				 'pi3k_probes',
+				 'pr_probes',
+				 # 'ras_probes',
+				 # 'src_probes',
+				 'stat3_probes',
+				 'tgfb_probes',
+				 'tnfa_probes'
+				 )
+flip = paths %in% mgflipprobit
+meta = make_multi_meta(gtrmastd, paths, flip = flip, raw = T)
+rownames(meta) = gsub('_probes', '', rownames(meta))
+rmaprobitmeta = t(apply(meta, 1, function(x) convert_raw_meta(x, method = 'probit')))
+corprobit = cor(t(probitmeta), method = 'pearson')
+pdf('pdf/gatza_pdf/gtrmastdprobit.pdf')
+recreate_gatza(gatzasymrmastd, rmaprobitmeta, path_symbol, checkgene, type = 'probit')
+dev.off()
+
+## Check the consistency between ranked and probit metagenes:
+pdf(file='pdf/gatza_pdf/gatza_rma_meta_rank_vs_probit.pdf', width=7, height=7)
+x1 = rmarankmeta
+x2 = rmaprobitmeta
+for (i in 1:nrow(x1)) {
+	main = rownames(x1)[i]
+	plot(x1[i,], x2[i,], main=main, xlab="Ranked metagene", ylab="Probit metagene", pch = 20)
+}
+dev.off()
 
 ## Repeat in MAS5 normalised data:
-gtmasmeta = make_multi_meta(gtmasstd, paths, flip = flip, raw = T)
-gtmasrankmeta   = apply(gtmasmeta, 1, function(x) rank(x)/length(x))
-gtmasprobitmeta = apply(gtmasmeta, 1, function(x) pnorm(scale(x)))
 
-## Look at the difference between RMA vs. MAS5 and rank-based vs. probit:
-pdf('pdf/gt_mg_results/gt_meta_comparison.pdf')
-for (i in 1:ncol(gtrmarankmeta)) {
-	rank1   = gtrmarankmeta[,i]
-	rank2   = gtmasrankmeta[,i]
-	probit1 = gtrmaprobitmeta[,i]
-	probit2 = gtmasprobitmeta[,i]
-	txt = colnames(gtrmarankmeta)[i]
-	txt = toupper(gsub('_probes', '', txt))
-	main = paste("RMA vs. MAS5 (ranked metagene)", txt, sep = ' - ')
-	plot(rank1, rank2, pch=20, main=main, xlab='Metagene values from RMA data', ylab='Metagene values from MAS5 data')
-	main = gsub('ranked', 'probit', main)
-	plot(probit1, probit2, pch=20, main=main, xlab='Metagene values from RMA data', ylab='Metagene values from MAS5 data')
-	main = paste("Ranked vs. probit metagenes (RMA data)", txt, sep = ' - ')
-	plot(rank1, probit1, pch=20, main=main, xlab='Ranked metagene values', ylab='Probit metagene values')
-	main = gsub('RMA', 'MAS5', main)
-	plot(rank2, probit2, pch=20, main=main, xlab='Ranked metagene values', ylab='Probit metagene values')
+# Ranked metagenes:
+mgflipmas = c(
+			  'akt_probes',
+			  'bcat_probes',
+			  # 'e2f1_probes',
+			  # 'egfr_probes',
+			  # 'er_probes',
+			  # 'her2_probes',
+			  'ifna_probes',
+			  'ifng_probes',
+			  # 'myc_probes',
+			  'p53_probes',
+			  'p63_probes',
+			  'pi3k_probes',
+			  'pr_probes',
+			  # 'ras_probes',
+			  'src_probes',
+			  'stat3_probes',
+			  'tgfb_probes',
+			  'tnfa_probes'
+			  )
+flip = paths %in% mgflipmas
+meta = make_multi_meta(gtmasstd, paths, flip = flip, raw = T)
+rownames(meta) = gsub('_probes', '', rownames(meta))
+masrankmeta = t(apply(meta, 1, function(x) convert_raw_meta(x, method = 'rank')))
+corrank = cor(t(masrankmeta), method = 'pearson')
+
+pdf('pdf/gatza_pdf/gtmasstdrank.pdf')
+recreate_gatza(gatzasymmasstd, masrankmeta, path_symbol, checkgene, type = 'ranked')
+dev.off()
+
+# Probit metagene:
+mgflipmas = c(
+			  'akt_probes',
+			  'bcat_probes',
+			  # 'e2f1_probes',
+			  # 'egfr_probes',
+			  # 'er_probes',
+			  # 'her2_probes',
+			  'ifna_probes',
+			  'ifng_probes',
+			  # 'myc_probes',
+			  'p53_probes',
+			  'p63_probes',
+			  'pi3k_probes',
+			  'pr_probes',
+			  # 'ras_probes',
+			  'src_probes',
+			  'stat3_probes',
+			  'tgfb_probes',
+			  'tnfa_probes'
+			  )
+flip = paths %in% mgflipmas
+meta = make_multi_meta(gtmasstd, paths, flip = flip, raw = T)
+rownames(meta) = gsub('_probes', '', rownames(meta))
+masprobitmeta = t(apply(meta, 1, function(x) convert_raw_meta(x, method = 'probit')))
+corrank = cor(t(masprobitmeta), method = 'pearson')
+
+pdf('pdf/gatza_pdf/gtmasstdprobit.pdf')
+recreate_gatza(gatzasymmasstd, masprobitmeta, path_symbol, checkgene, type = 'probit')
+dev.off()
+
+## Check the consistency between ranked and probit metagenes:
+pdf(file='pdf/gatza_pdf/gatza_mas_meta_rank_vs_probit.pdf', width=7, height=7)
+x1 = masrankmeta
+x2 = masprobitmeta
+for (i in 1:nrow(x1)) {
+	main = rownames(x1)[i]
+	plot(x1[i,], x2[i,], main=main, xlab="Ranked metagene", ylab="Probit metagene", pch = 20)
 }
 dev.off()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## TODO: work from here
-print()
+## Compare the metagenes between RMA and MAS5 normalised data:
+pdf(file='pdf/gatza_pdf/combmetaplot.pdf', width=7, height=7)
+x1 = rmarankmeta
+x2 = rmaprobitmeta
+x3 = masrankmeta
+x4 = masprobitmeta
+for (i in 1:nrow(x1)) {
+	txt = rownames(x1)[i]
+	main = paste(txt, ' (rank)', sep='')
+	plot(x1[i,], x3[i,], main=main, xlab="RMA", ylab="MAS5")
+	main = paste(txt, ' (probit)', sep='')
+	plot(x2[i,], x4[i,], main=main, xlab="RMA", ylab="MAS5")
+}
+dev.off()
 
 ###############################################################################
-## Gatza and BMI metagene in ICGC
+# Make Gatza pathway transformation matrix in Gatza data:
 
-## make metagene with Gatza pathways in ICGC data samples:
-gatzametalist = list()
+gtrmatransmat = list()
 for (i in 1:length(paths)) {
-	pdfname = gsub('probes', 'meta.pdf', paths[i])
-	pdfname = paste('pdf/', pdfname, sep='')
-	pdf(pdfname)
 	gene = get(paths[i])
-	mat = crsymmat[gene,]
-	mat = t(apply(mat, 1, function(x) (x-mean(x))/sd(x)))
-	mat[mat < -3] = -3
-	mat[mat > 3] = 3
-	tmpsvd = svd(mat)
-	trmat = diag(1/tmpsvd$d) %*% t(tmpsvd$u)
-	tmpmeta = vector()
-	for (j in 1:length(cancertypes)) {
-		cancer = t(get(cancertypes[j]))
-		mat = cancer[gene,]
-		mat = standardisedata(mat)
-		bmi = get(paste(cancertypes[j], 'bmi', sep=''))
-		tmpsvd = t(trmat %*% mat)
-		tmpsvd = tmpsvd[,1]
-		tmpsvd = rank(tmpsvd)/length(tmpsvd)
-		if (paths[i] %in% mgflip) {
-			tmpsvd = 1-tmpsvd
-		}
-		main = gsub('probes', '', paths[i])
-		main = toupper(main)
-		main = paste(main, 'metagene (')
-		main = paste(main, cancertypes[j], sep = '')
-		main = paste(main, ')', sep = '')
-		metaplot3(mat, tmpsvd, bmi, name = main)
-		tmpmeta = c(tmpmeta, tmpsvd)
+	mat = gtrmastd[gene,]
+	trans = make_trans_mat(mat)
+	gtrmatransmat[[i]] = trans
+}
+names(gtrmatransmat) = paths
+
+gtmastransmat = list()
+for (i in 1:length(paths)) {
+	gene = get(paths[i])
+	mat = gtmasstd[gene,]
+	trans = make_trans_mat(mat)
+	gtmastransmat[[i]] = trans
+}
+names(gtmastransmat) = paths
+
+###############################################################################
+# Which data set is the best to make transformation matrices (both for Gatza pathways and obesity metagenes)?
+# Look at the correlation between the metagene produced from transformation matrix and SVD
+
+# Check if the function works ("Control"):
+gt1 = compare_svd_trans(gtrmastd, paths, gtrmatransmat)
+gt2 = compare_svd_trans(gtmasstd, paths, gtmastransmat)
+gt3 = compare_svd_trans(gtmasstd, paths, gtrmatransmat)
+gt4 = compare_svd_trans(gtrmastd, paths, gtmastransmat)
+# Correlation should be 1 for both test1 and test2, since the transformation matrices were derived in this dataset
+gt1$correlation
+gt2$correlation
+
+# Correlation is slightly off for test3 and test4 - probably due to the difference in the normalisation method
+gt3$correlation
+gt4$correlation
+
+# Repeat for other data sets:
+# Creighton data:
+cr1 = compare_svd_trans(crstdrma, paths, gtrmatransmat)
+cr2 = compare_svd_trans(crstdmas, paths, gtmastransmat)
+cr3 = compare_svd_trans(crstdmas, paths, gtrmatransmat)
+cr4 = compare_svd_trans(crstdrma, paths, gtmastransmat)
+
+# FM data:
+fm1 = compare_svd_trans(fmstdrma, paths, gtrmatransmat)
+fm2 = compare_svd_trans(fmstdmas, paths, gtmastransmat)
+fm3 = compare_svd_trans(fmstdmas, paths, gtrmatransmat)
+fm4 = compare_svd_trans(fmstdrma, paths, gtmastransmat)
+
+# Cris data:
+cris1 = compare_svd_trans(crisstdrma, paths, gtrmatransmat)
+cris2 = compare_svd_trans(crisstdmas, paths, gtmastransmat)
+cris3 = compare_svd_trans(crisstdmas, paths, gtrmatransmat)
+cris4 = compare_svd_trans(crisstdrma, paths, gtmastransmat)
+
+# Summarize the correlation data (RMA with RMA transmat, MAS with MAS transmat):
+txt = c('Gatza','FM', 'Creighton', 'Cris')
+gtrmatransres = cbind(gt1$correlation,fm1$correlation, cr1$correlation, cris1$correlation)
+colnames(gtrmatransres) = txt
+gtmastransres = cbind(gt2$correlation,fm2$correlation, cr2$correlation, cris2$correlation)
+colnames(gtmastransres) = txt
+
+# Summarize the correlation data (MAS with RMA transmat, RMA with MAS transmat):
+txt = c('Gatza', 'FM', 'Creighton', 'Cris')
+gtopptransres1 = cbind(gt3$correlation, fm3$correlation, cr3$correlation, cris3$correlation)
+colnames(gtopptransres1) = txt
+gtopptransres2 = cbind(gt4$correlation,fm4$correlation, cr4$correlation, cris4$correlation)
+colnames(gtopptransres2) = txt
+
+## Plot a bar graph to compare each metagenes with one another:
+pdf('pdf/gatza_pdf/gatza_cor_barplot.pdf')
+col = brewer.pal(4, 'Paired')
+for(i in 1:nrow(gtrmatransres)) {
+	for(j in 1:length(txt)) {
+		main = paste(txt[j], '(')
+		main = paste(main, rownames(gtrmatransres)[i], sep='')
+		main = paste(main, ')', sep='')
+		x1 = abs(gtrmatransres[i, j])
+		x2 = abs(gtopptransres2[i, j])
+		x3 = abs(gtmastransres[i, j])
+		x4 = abs(gtopptransres1[i, j])
+		dat = c(x1, x2, x3, x4)
+		names(dat) = c('RMA/RMA','RMA/MAS5','MAS5/MAS5','MAS5/RMA')
+		barplot(dat, ylim = c(0,1), main = main, col = col, ylab = 'Correlation (Absolute value)', xlab = 'Data/Transformation matrix')
 	}
-	gatzametalist[[i]] = tmpmeta
-	dev.off()
-}
-gatzametalist = as.data.frame(gatzametalist)
-colnames(gatzametalist) = paths
-
-## stick the BMI metagene and Gatza metagene together:
-allmetagene = cbind(bmimetalist, gatzametalist)
-allmetagene = t(data.matrix(allmetagene))
-
-## need to make a combined clinical data for all the cancer types
-x = c('bcrpatientbarcode', 'tumortissuesite', 'weight', 'height')
-allclin = BLCAclin[,x]
-for(i in 2:length(cancertypes)) {
-	txt = paste(cancertypes[i], 'clin', sep='')
-	clin = get(txt)
-	clin = clin[,x]
-	allclin = rbind(allclin, clin)
-}
-rownames(allclin) = allclin$bcrpatientbarcode
-allclin = allclin[colnames(allmetagene),-1]
-allclin$weight = as.numeric(as.character(allclin$weight))
-allclin$height = as.numeric(as.character(allclin$height))
-allclin[,4] = allclin$weight/((allclin$height/100)^2)
-colnames(allclin)[4] = 'bmi'
-x = allclin[,4]
-for (i in 1:length(x)) {
-	if(x[i] >= 30){
-		x[i] = "obese"
-	} else if(x[i] < 25){
-		x[i] = "normal"
-	} else {
-		x[i] = "overweight"
-	}
-}
-allclin[,5] = x
-colnames(allclin)[5] = 'bmiStatus'
-
-## prepare colours for cancer types:
-brewercol = brewer.pal(8, "Set1")
-cancertypecol = c()
-type = c()
-for (i in 1:length(cancertypes)) {
-	type = c(type, rep(cancertypes[i], nrow(get(cancertypes[i]))))
-	cancertypecol = c(cancertypecol, rep(brewercol[i], nrow(get(cancertypes[i]))))
-}
-allclin[,1] = type
-
-## prepare colours for BMI status:
-brewercol = brewer.pal(3, "Set1")
-bmicol = allclin[,4]
-for (i in 1:length(bmicol)) {
-	if(bmicol[i] >= 30){
-		bmicol[i] = brewercol[1]
-	} else if(bmicol[i] < 25){
-		bmicol[i] = brewercol[2]
-	} else {
-		bmicol[i] = brewercol[3]
-	}
-}
-
-#bmicol = ifelse(allclin[,5] == "obese", brewercol[1], brewercol[2])
-
-## make a vector of the order of the samples (by BMI values), per cancer type.
-bmiord = vector()
-bmivalcol = vector()
-count = 0
-for (i in 1:length(cancertypes)) {
-	type = cancertypes[i]
-	cl = allclin[which(allclin$tumortissuesite == type),]
-	cl = cl$bmi
-	ord = order(rank(cl)) + count
-	col = bluered(length(ord))[rank(cl)]
-
-	bmiord = c(bmiord, ord)
-	bmivalcol = c(bmivalcol, col)
-	count = length(bmiord)
-}
-
-allcol = rbind(BMI=bmivalcol, BMIStatus=bmicol, CancerType=cancertypecol)
-
-pdf(file='pdf/gatzabmimeta.pdf',width=14, height=7)
-heatmap.2x(allmetagene, scale='none', trace='none', col=bluered(2000), ColSideColors=allcol)
-heatmap.2x(allmetagene[, 1:1872], scale='none', trace='none', col=bluered(2000), ColSideColors=allcol, Colv=F)
-heatmap.2x(allmetagene[, bmiord], scale='none', trace='none', col=bluered(2000), ColSideColors=allcol[,bmiord], Colv=F)
-dev.off()
-
-pdf('pdf/allmetacor.pdf')
-x = cor(t(allmetagene), method='pearson')
-heatmap.2(x, trace = 'none', scale='none', col='bluered', main="Pearson correlation")
-x = cor(t(allmetagene), method='spearman')
-heatmap.2(x, trace = 'none', scale='none', col='bluered', main='Spearman correlation')
-x = cor(gatzametalist, method='spearman')
-heatmap.2(x, trace = 'none', scale='none', col='bluered', main='Spearman correlation')
-dev.off()
-
-# Plot heatmaps of all the metagene for each cancer type
-pdf(file='pdf/cancersepallmeta.pdf', width=7, height=7)
-for (i in 1:length(cancertypes)) {
-	type = cancertypes[i]
-	ind = which(allclin$tumortissuesite == type)
-	samples = rownames(allclin)[ind]
-	mat = allmetagene[,samples]
-	heatmap.2(x=mat, scale='none', trace='none', col='bluered', main=cancertypes[i])
-	heatmap.2x(allmetagene[, bmiord[ind]], scale='none', trace='none', col=bluered(2000), ColSideColors=allcol[c("BMI", "BMIStatus"),bmiord[ind]], Colv=F)
 }
 dev.off()
 
+## From these barplots, some of the pathways do have variability between the
+## SVD metagene and the transformation matrix metagene, where the transformation
+## matrices are from the Gatza data.
+
+###############################################################################
+# Repeat the same thing, but with the BMI metagenes:
+# (Make sure to re-run the Creighton DEG analysis to get the gene probe IDs for
+# the obesity genes)
+
+tmp = fmobsgenes
+fmobsgenes = as.character(tmp$Probe)
+obsname = c(allobsname, 'crobsgenes', 'fmobsgenes')
+
+# make transformation matrix in Creighton's data:
+obsrmatransmat = list()
+for (i in 1:length(obsname)) {
+	gene = get(obsname[i])
+	mat = crstdrma[gene,]
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	obsrmatransmat [[i]] = trans
+	names(obsrmatransmat)[i] = obsname[i]
+}
+
+obsmastransmat = list()
+for (i in 1:length(obsname)) {
+	gene = get(obsname[i])
+	mat = crstdmas[gene,]
+	svd = svd(mat)
+	trans = diag(1/svd$d) %*% t(svd$u)
+	obsmastransmat [[i]] = trans
+	names(obsmastransmat)[i] = obsname[i]
+}
+
+# Check if the function works ("Control"):
+cr1 = compare_svd_trans(crstdrma, obsname, obsrmatransmat)
+cr2 = compare_svd_trans(crstdmas, obsname, obsmastransmat)
+cr3 = compare_svd_trans(crstdmas, obsname, obsrmatransmat)
+cr4 = compare_svd_trans(crstdrma, obsname, obsmastransmat)
+
+# Correlation should be 1 for both test1 and test2, since the transformation matrices were derived in this dataset
+cr1$correlation
+cr2$correlation
+
+# Correlation is slightly off for test3 and test4 - probably due to the difference in the normalisation method
+cr3$correlation
+cr4$correlation
+
+# Repeat for other data sets:
+# Gatza data:
+gt1 = compare_svd_trans(gtrmastd, obsname, obsrmatransmat)
+gt2 = compare_svd_trans(gtmasstd, obsname, obsmastransmat)
+gt3 = compare_svd_trans(gtmasstd, obsname, obsrmatransmat)
+gt4 = compare_svd_trans(gtrmastd, obsname, obsmastransmat)
+
+# FM data:
+fm1 = compare_svd_trans(fmstdrma, obsname, obsrmatransmat)
+fm2 = compare_svd_trans(fmstdmas, obsname, obsmastransmat)
+fm3 = compare_svd_trans(fmstdmas, obsname, obsrmatransmat)
+fm4 = compare_svd_trans(fmstdrma, obsname, obsmastransmat)
+
+# Cris data:
+cris1 = compare_svd_trans(crisstdrma, obsname, obsrmatransmat)
+cris2 = compare_svd_trans(crisstdmas, obsname, obsmastransmat)
+cris3 = compare_svd_trans(crisstdmas, obsname, obsrmatransmat)
+cris4 = compare_svd_trans(crisstdrma, obsname, obsmastransmat)
+
+# Summarize the correlation data (RMA with RMA transmat, MAS with MAS transmat):
+txt = c('Creighton','Gatza', 'FM', 'Cris')
+obsrmatransres = cbind(cr1$correlation,gt1$correlation, fm1$correlation, cris1$correlation)
+colnames(obsrmatransres) = txt
+obsmastransres = cbind(cr2$correlation,gt2$correlation, fm2$correlation, cris2$correlation)
+colnames(obsmastransres) = txt
+
+# Summarize the correlation data (MAS with RMA transmat, RMA with MAS transmat):
+txt = c('Creighton','Gatza', 'FM', 'Cris')
+obsopptransres1 = cbind(cr3$correlation,gt3$correlation, fm3$correlation, cris3$correlation)
+colnames(obsopptransres1) = txt
+obsopptransres2 = cbind(cr4$correlation,gt4$correlation, fm4$correlation, cris4$correlation)
+colnames(obsopptransres2) = txt
+
+## Plot a bar graph to compare each metagenes with one another:
+pdf('pdf/gatza_pdf/obs_cor_barplot.pdf')
+col = brewer.pal(4, 'Paired')
+for(i in 1:nrow(obsrmatransres)) {
+	for(j in 1:length(txt)) {
+		main = paste(txt[j], '(')
+		main = paste(main, rownames(obsrmatransres)[i], sep='')
+		main = paste(main, ')', sep='')
+		x1 = abs(obsrmatransres[i, j])
+		x2 = abs(obsopptransres2[i, j])
+		x3 = abs(obsmastransres[i, j])
+		x4 = abs(obsopptransres1[i, j])
+		dat = c(x1, x2, x3, x4)
+		names(dat) = c('RMA/RMA','RMA/MAS5','MAS5/MAS5','MAS5/RMA')
+		barplot(dat, ylim = c(0,1), main = main, col = col, ylab = 'Correlation (Absolute value)', xlab = 'Data/Transformation matrix')
+	}
+}
+dev.off()
+
+## Unlike the Gatza metagenes, it doesn't matter whether you make the metagene
+## from the transformation matrix (from Creighton's data) or from SVD.
+## Therefore, the transformation matrix for the obesity metagenes can be made in
+## any dataset.
+
+###############################################################################
+## Does the normalisation method of the raw data and/or the normalisation
+## method of the data in which the transformation matrix was derived from
+## affect the metagene?
+
+## TODO:
 
 
 
@@ -1659,66 +1914,275 @@ dev.off()
 
 
 
+
+
+
+###############################################################################
+## Quick metagene direction check for the obesity associated genes in Gatza data:
+
+commongenes = table(c(rawobsgene,crolgene,resobsgene,rescrolgene, caobsgene,cacrolgene,caresobsgene,carescrolgene, crobsgenes))
+commongenes = commongenes[commongenes==9]
+commongenes = names(commongenes)
+
+tmpname = c(allobsname, 'crobsgenes')
+
+matheat = gtrmastd[commongenes,]
+matheat[matheat < -3] = -3
+matheat[matheat > 3] = 3
+
+pdf('pdf/gatza_pdf/gtobrma.pdf')
+for (i in 1:length(tmpname)) {
+	genes = get(tmpname[i])
+	tmp = gtrmastd[genes,]
+	meta = make_metagene(tmp, flip = F, raw = F)
+	ord = order(meta)
+	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(meta))[rank(meta)][ord], Colv=NA, main=tmpname[i], cexRow=1.0)
+}
+dev.off()
+
+## Obesity metagenes to flip in RMA normalised data:
+obsfliprma = c('resobsgene')
+
+matheat = gtmasstd[commongenes,]
+matheat[matheat < -3] = -3
+matheat[matheat > 3] = 3
+
+pdf('pdf/gatza_pdf/gtobmas.pdf')
+for (i in 1:length(tmpname)) {
+	genes = get(tmpname[i])
+	tmp = gtmasstd[genes,]
+	meta = make_metagene(tmp, flip = F, raw = F)
+	ord = order(meta)
+	heatmap.2(matheat[,ord], trace='none',scale='none', col='bluered', ColSideColors = bluered(length(meta))[rank(meta)][ord], Colv=NA, main=tmpname[i], cexRow=1.0)
+}
+dev.off()
+
+## Obesity metagenes to flip in RMA normalised data:
+obsflipmas = c('rawobsgene', 'caobsgene', 'caresobsgene')
+
+###############################################################################
+## Apply Gatza metagene transformation matrix in other data sets and check if
+## the clustering is similar/same as in the Gatza data:
+
+datanames = c('crstdzzz','crisstdzzz','fmstdzzz','gtzzzstd')
+maintxt= c('zzz-normalised Creighton data','zzz-normalised Cris data','zzz-normalised FM data','zzz-normalised Gatza data')
+
+pdf(file='pdf/gatza_pdf/gatza_meta_trans.pdf', width=7, height=7)
+
+tmpvar = gsub('zzz', 'rma', datanames)
+tmptxt = gsub('zzz', 'RMA', maintxt)
+for (i in 1:length(tmpvar)) {
+	mat = get(tmpvar[i])
+	flip = paths %in% mgfliprma
+	tmpmeta = make_multi_transmeta(mat, paths, gtrmatransmat, flip = flip, raw = T)
+	rownames(tmpmeta) = gsub('_probes', '', rownames(tmpmeta))
+	tmpmeta = t(apply(tmpmeta, 1, function(x) convert_raw_meta(x, method = 'rank')))
+	gatza_heat(tmpmeta, type = 'ranked', main = tmptxt[i])
+}
+
+tmpvar = gsub('zzz', 'mas', datanames)
+tmptxt = gsub('zzz', 'MAS5', maintxt)
+for (i in 1:length(tmpvar)) {
+	mat = get(tmpvar[i])
+	flip = paths %in% mgflipmas
+	tmpmeta = make_multi_transmeta(mat, paths, gtmastransmat, flip = flip, raw = T)
+	rownames(tmpmeta) = gsub('_probes', '', rownames(tmpmeta))
+	tmpmeta = t(apply(tmpmeta, 1, function(x) convert_raw_meta(x, method = 'rank')))
+	gatza_heat(tmpmeta, type = 'ranked', main = tmptxt[i])
+}
+
+dev.off()
+
+## The heatmaps show similar clustering in other data sets as the clustering in the Gatza data set.
+
+###############################################################################
+## Apply all metagene transformation matrix (all derived from Gatza data) in
+## other data sets and check which pathways cluster together with the obesity
+## metagenes
+
+# make all transformation matrices in Gatza data
+allmeta = c(paths, obsname)
+varname = allmeta
+varname = gsub('_probes', '', varname)
+varname = gsub('genes', '', varname)
+varname = gsub('gene', '', varname)
+
+allrmatransmat = list()
+for (i in 1:length(allmeta)) {
+	gene = get(allmeta[i])
+	mat = gtrmastd[gene,]
+	trans = make_trans_mat(mat)
+	allrmatransmat[[i]] = trans
+}
+names(allrmatransmat) = varname
+
+allmastransmat = list()
+for (i in 1:length(allmeta)) {
+	gene = get(allmeta[i])
+	mat = gtmasstd[gene,]
+	trans = make_trans_mat(mat)
+	allmastransmat[[i]] = trans
+}
+names(allmastransmat) = varname
+
+mgfliprmaall = c(mgfliprma, obsfliprma)
+mgflipmasall = c(mgflipmas, obsflipmas)
+
+pdf(file='pdf/gatza_pdf/all_meta_trans.pdf', width=7, height=7)
+
+tmpvar = gsub('zzz', 'rma', datanames)
+tmptxt = gsub('zzz', 'RMA', maintxt)
+for (i in 1:length(tmpvar)) {
+	mat = get(tmpvar[i])
+	flip = allmeta %in% mgfliprmaall
+	tmpmeta = make_multi_transmeta(mat, allmeta, allrmatransmat, flip = flip, raw = T)
+	rownames(tmpmeta) = gsub('_probes', '', rownames(tmpmeta))
+	rownames(tmpmeta) = gsub('genes', '', rownames(tmpmeta))
+	rownames(tmpmeta) = gsub('gene', '', rownames(tmpmeta))
+	tmpmeta = t(apply(tmpmeta, 1, function(x) convert_raw_meta(x, method = 'rank')))
+	gatza_heat(tmpmeta, type = 'ranked', main = tmptxt[i])
+}
+
+## It seems like the obesity metagenes do not cluster together with any other pathways. FM obesity gene clustered together with BCAT/E2F1/... group, but didn't look like it had a significant correlation with them.
+
+tmpvar = gsub('zzz', 'mas', datanames)
+tmptxt = gsub('zzz', 'MAS5', maintxt)
+for (i in 1:length(tmpvar)) {
+	mat = get(tmpvar[i])
+	flip = allmeta %in% mgflipmasall
+	tmpmeta = make_multi_transmeta(mat, allmeta, allmastransmat, flip = flip, raw = T)
+	rownames(tmpmeta) = gsub('_probes', '', rownames(tmpmeta))
+	rownames(tmpmeta) = gsub('genes', '', rownames(tmpmeta))
+	rownames(tmpmeta) = gsub('gene', '', rownames(tmpmeta))
+	tmpmeta = t(apply(tmpmeta, 1, function(x) convert_raw_meta(x, method = 'rank')))
+	gatza_heat(tmpmeta, type = 'ranked', main = tmptxt[i])
+}
+
+## In the MAS5-normalised data, it seems like the obesity metagenes from Creighton's data split up into two groups: the Creighton overlap metagenes, and non-overlap metagenes. The overlap groups formed a cluster on its own, but the non-overlap group clustered together with TGFB pathway strongly. FM metagene again clustered together with BCAT/E2F1 group (slightly stronger than in RMA normalised data).
+
+dev.off()
+
+###############################################################################
+# Begin on the linear model stuff - predicting BMI metagenes using pathway
+# metagenes (in Cris' data)
+
+# First, drop some pathways that didn't look good over different data sets, using previous results
+# There were six 'decent' pathways to use:
+usepath = c("bcat_probes","er_probes","ifna_probes","ifng_probes","myc_probes","pr_probes")
+
+# Make the data for linear model:
+
+# metagene results from RMA (transmat and data) (Cris's data)
+gtmeta = compare_svd_trans(crisstdrma, paths, gtrmatransmat)
+gtmeta = gtmeta$trans[,usepath]
+obsmeta = compare_svd_trans(crisstdrma, obsname, obsrmatransmat)
+obsmeta = obsmeta$trans
+crisdata = cbind(crisclin, gtmeta, obsmeta)
+
+# Create linear model:
+# Linear model with just BMI:
+fit = lm(crobsgenes ~ bmi, crisdata)
+summary(fit)
+# Linear model with just BMI status:
+fit = lm(crobsgenes ~ bmiStatus, crisdata)
+summary(fit)
+# Linear model with both BMI and BMI status:
+fit = lm(crobsgenes ~ bmi + bmiStatus, crisdata)
+summary(fit)
+
+# Linear model with other pathway metagenes:
+# Linear model with just BMI:
+fit2 = lm(crobsgenes ~ bmi + bcat_probes + er_probes + ifna_probes + ifng_probes + myc_probes + pr_probes, crisdata)
+summary(fit2)
+# Linear model with just BMI status:
+fit2 = lm(crobsgenes ~ bmiStatus + bcat_probes + er_probes + ifna_probes + ifng_probes + myc_probes + pr_probes, crisdata)
+summary(fit2)
+# Linear model with both BMI and BMI status:
+fit2 = lm(crobsgenes ~ bmi + bmiStatus + bcat_probes + er_probes + ifna_probes + ifng_probes + myc_probes + pr_probes, crisdata)
+summary(fit2)
+
+# Linear model with pathway metagenes only:
+fit3 = lm(crobsgenes ~ bcat_probes + er_probes + ifna_probes + ifng_probes + myc_probes + pr_probes, crisdata)
+summary(fit3)
+
+# Linear model with PR pathway metagene only:
+fit4 = lm(crobsgenes ~ pr_probes, crisdata)
+summary(fit4)
+
+###############################################################################
+# Predict obesity metagene in Cris' data, using the linear model that was fitted in Cris' data:
+
+prediction1 = predict(fit, crisdata, se.fit = T)
+cor(prediction1$fit, crisdata$crobsgenes, method = 'spearman')
+cor(prediction1$fit, crisdata$crobsgenes, method = 'pearson')
+
+prediction2 = predict(fit2, crisdata, se.fit = T)
+cor(prediction2$fit, crisdata$crobsgenes, method = 'spearman')
+cor(prediction2$fit, crisdata$crobsgenes, method = 'pearson')
+
+prediction3 = predict(fit3, crisdata, se.fit = T)
+cor(prediction3$fit, crisdata$crobsgenes, method = 'spearman')
+cor(prediction3$fit, crisdata$crobsgenes, method = 'pearson')
+
+prediction4 = predict(fit4, crisdata, se.fit = T)
+cor(prediction4$fit, crisdata$crobsgenes, method = 'spearman')
+cor(prediction4$fit, crisdata$crobsgenes, method = 'pearson')
+
+pdf(file='pdf/gatza_pdf/prediction_cris_with_cris.pdf', width=7, height=7)
+plot(crisdata$crobsgenes, prediction1$fit, pch=20)
+plot(crisdata$crobsgenes, prediction2$fit, pch=20)
+plot(crisdata$crobsgenes, prediction3$fit, pch=20)
+plot(crisdata$crobsgenes, prediction4$fit, pch=20)
+dev.off()
+
+###############################################################################
+# Predict obesity metagene in Creighton's data, using the linear model that was fitted in Cris' data:
+
+# Make the data:
+
+# metagene results from RMA (transmat and data) (Creighton's data)
+gtmeta = compare_svd_trans(crstdrma, paths, gtrmatransmat)
+gtmeta = gtmeta$trans[,usepath]
+obsmeta = compare_svd_trans(crstdrma, obsname, obsrmatransmat)
+obsmeta = obsmeta$trans
+crdata = cbind(crclin, gtmeta, obsmeta)
+
+# Predict the BMI metagene based on the value of the pathway metagenes:
+prediction1 = predict(fit, crdata, se.fit = T)
+cor(prediction1$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction1$fit, crdata$crobsgenes, method = 'pearson')
+
+prediction2 = predict(fit2, crdata, se.fit = T)
+cor(prediction2$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction2$fit, crdata$crobsgenes, method = 'pearson')
+
+prediction3 = predict(fit3, crdata, se.fit = T)
+cor(prediction3$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction3$fit, crdata$crobsgenes, method = 'pearson')
+
+prediction4 = predict(fit4, crdata, se.fit = T)
+cor(prediction4$fit, crdata$crobsgenes, method = 'spearman')
+cor(prediction4$fit, crdata$crobsgenes, method = 'pearson')
+
+pdf(file='pdf/gatza_pdf/prediction_cr_with_cris.pdf', width=7, height=7)
+plot(crdata$crobsgenes, prediction1$fit, pch=20, ylab='Predicted metagene', xlab='True metagene', main='BMI-only')
+plot(crdata$crobsgenes, prediction2$fit, pch=20, ylab='Predicted metagene', xlab='True metagene', main='BMI and pathways')
+plot(crdata$crobsgenes, prediction3$fit, pch=20, ylab='Predicted metagene', xlab='True metagene', main='Pathways-only')
+plot(crdata$crobsgenes, prediction4$fit, pch=20, ylab='Predicted metagene', xlab='True metagene', main='PR-only')
+dev.off()
+
+###############################################################################
+# Use all the pathways, but drop them out one by one and find the best set of pathways that predict the obesity metagenes
+
+
+
+
+
+
+
+
+###############################################################################
+## TODO: work from here
 print('hello world!') ## command to stop nvimr to go down to the bottom
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
