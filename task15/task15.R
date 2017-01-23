@@ -1342,7 +1342,7 @@ genenames = rownames(test)
 goind = lapply(goind, function(x) genenames[which(x == 1)])
 
 ## use the camera function in limma package
-test = camera(test, goind, design)
+test = camera(test, goind, design, use.ranks=T)
 
 ## use the roast function to see if it does any better:
 test2 = roast(test, goind, design)
@@ -1380,7 +1380,7 @@ test = lapply(seq_along(test), function(x) {
               ind = lapply(ind, function(z) genenames[which(z == 1)])
 
               # pathway enrichment:
-              y = camera(y, goind, design, contrast = 2)
+              y = camera(y, goind, design, contrast = 2, use.ranks=T)
 })
 
 
@@ -1431,7 +1431,7 @@ scaledtest = lapply(seq_along(scaledtest), function(x) {
               ind = lapply(ind, function(z) genenames[which(z == 1)])
 
               # pathway enrichment:
-              y = camera(y, goind, design, contrast = 2)
+              y = camera(y, goind, design, contrast = 2, use.ranks=T)
 })
 
 
