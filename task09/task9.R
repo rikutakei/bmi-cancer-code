@@ -280,24 +280,3 @@ for (i in 1:length(files)) {
     dput(get(files[i]), paste(files[i],'t9.txt',sep=''))
     dput(get(bmifiles[i]), paste(bmifiles[i],'t9.txt',sep=''))
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -92,13 +92,21 @@ Repeated it with top 100 genes instead of 799 genes
 
 Conclusion: There are no genes that significantly correlate with BMI as a continuous variable, and does not associate with sample BMI status and BMI in other cancer data.
 
+===============================================================================
 
+12 October 2016
 
+-------------------------------------------------------------------------------
 
+Made the T/F matrix for each dataset on the biochem server
+	- it seems like the GO T/F matrix is too big for the computer to handle
+		- may have to do the GO analysis on the server computer...
 
+Will still do KEGG and reactome pathway analysis on this computer
 
+Turns out the pathway databse matrices take too much memory, so going to do everything on the server
 
-
+Or, maybe store the data using save() function...?
 
 
 
